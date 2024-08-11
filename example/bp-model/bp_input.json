@@ -1,0 +1,80 @@
+{
+"name": "model_parameters",
+"global_setting": {
+          "type_map":[29],
+          "neighbor": 100,
+          "cutoff": 6.0,
+          "dtype": "float64",
+          "logger_file": "mlff.log"
+},
+"model_setting": {
+          "name": "BPMlp",
+          "descriptor" : {
+                         "list":[
+                           {
+                                "type_name": "SymFunRad",
+                                "R_max": 6.0,
+                                "R_min": 0.5,
+                                "num_basis": 24,
+                                "smooth_fun": "cos",
+                                "eta": 1.0,
+                                "rs_fun": "linear"
+                            },
+                           {
+                                "type_name": "SymFunAngN",
+                                "R_max": 6.0,
+                                "R_min": 0.5,
+                                "num_basis": 2,
+                                "smooth_fun": "cos",
+                                "eta": 1.0,
+                                "lambd": 1.0,
+                                "zeta": 1.0,
+                                "rs_fun": "linear"
+                            }
+                         ]
+              },
+          "fitting_net": {
+                         "network_size": [200,200,200],
+                         "bias": true,
+                         "resnet_dt": true,
+                         "activate_function": "tanh"
+              }
+},
+"data_setting": {
+               "file_format": "extxyz",
+               "train_file":  ["test1.extxyz"],
+               "valid_file":  ["test1.extxyz"]
+},
+"train_setting": {
+               "epoch": 1,
+               "optimizer":"Adam",
+               "optim_set": {
+                               "betas1": 0.9,
+                               "betas2": 0.999,
+                               "weight_decat": 0
+                             },
+               "save_check": 5,
+               "batch_size": 1,
+               "print_freq": 1,
+               "model_file": "model.pt",
+               "freeze_param": []
+},
+"loss_setting": {
+               "start_energy_weight": 1.0,
+               "limit_energy_weight": 1.0,
+               "start_force_weight": 100.0,
+               "limit_force_weight": 1.0,
+               "start_virial_weight": 0.0,
+               "limit_virial_weight": 0.0,
+               "start_ei_weight": 0.0,
+               "limit_ei_weight": 0.0,
+               "loss_file": "loss.curve"
+},
+"learning_rate" :{
+                  "type_name": "exp",
+                  "decay_step": 1000,
+                  "decay_rate": 0.9,
+                  "start_lr":	1.0e-3,
+                  "limit_lr":	1.0e-8
+    }
+}
