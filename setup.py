@@ -4,7 +4,7 @@ from torch.utils.cpp_extension import BuildExtension, CppExtension
 
 setup(
     name="abfml",
-    version='0.1.0',
+    version='1.0.0',
     description='Rapid building, fitting, and application of machine learning force fields',
     author='GengXingZe',
     author_email='1308186024@qq.com',
