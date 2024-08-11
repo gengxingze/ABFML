@@ -1,8 +1,4 @@
-Here's the enhanced version of your ABFML documentation with added explanations:
-
----
-
-## ABFML 
+# ABFML 
 
 ### 1. Introduction
 ABFML is a software platform developed on the popular deep learning framework PyTorch. It provides extensions and support for third-party packages like LAMMPS and ASE. The primary goal of ABFML is to offer researchers a user-friendly platform for the rapid, simple, and efficient development, fitting, and application of new machine learning force field models. By leveraging PyTorch's powerful tensor operations, ABFML simplifies the complex process of developing force field models and accelerates their application in molecular simulations.
