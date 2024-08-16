@@ -53,8 +53,8 @@ To integrate ABFML with LAMMPS, follow these steps:
    cd src
    make yes-abfml
    make mpi
-   ```
-   **Note**: Ensure your GCC compiler is version 9.0 or above, as older versions may not support.
+```
+**Note**: Ensure your GCC compiler is version 9.0 or above, as older versions may not support.
 
 ## 3. Run
 
