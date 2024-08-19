@@ -9,9 +9,15 @@ from abfml.data.read_data import ReadData
 class ABFML(Calculator):
     implemented_properties = ['energy', 'energies', 'forces', 'stress', 'stresses']
 
-    def __init__(self, model: str, **kwargs) -> None:
+    def __init__(self, model: str, dtype: str = 'float64', **kwargs) -> None:
         Calculator.__init__(self, **kwargs)
+        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.model = torch.jit.load(model)
+        if dtype == "float32":
+            self.dtype = torch.float32
+        else:
+            self.dtype = torch.float64
+        self.model.to(self.dtype).to(device=self.device)
         self.model.eval()
 
     def calculate(self,
@@ -23,12 +29,12 @@ class ABFML(Calculator):
         cutoff = self.model.cutoff
         neighbor = self.model.neighbor
         information_tulp = ReadData.calculate_neighbor(atom=atoms, cutoff=cutoff, neighbor=neighbor, type_map=type_map)
-        element_type, image_type, neighbor_list, neighbor_type, image_dR = information_tulp
+        element_type, Zi, Nij, Zij, Rij = information_tulp
         predict_tulp = self.model(torch.tensor(element_type),
-                                  torch.tensor(image_type),
-                                  torch.tensor(neighbor_list),
-                                  torch.tensor(neighbor_type),
-                                  torch.tensor(image_dR), 0)
+                                  torch.tensor(Zi).to(device=self.device),
+                                  torch.tensor(Nij).to(device=self.device),
+                                  torch.tensor(Zij).to(device=self.device),
+                                  torch.tensor(Rij).to(self.dtype).to(device=self.device), 0)
         self.results["energy"] = predict_tulp[0].detach().numpy().item()
         self.results["energies"] = predict_tulp[1].detach().numpy().reshape(-1)
         self.results["forces"] = predict_tulp[2].detach().numpy().reshape(-1, 3)
