@@ -76,3 +76,20 @@ To run an example using ABFML, follow these steps:
   
 #   Use the element number to represent the element type
 ```
+## 4. Build a new model
+Build your own model input in the input file and specify the path to the model's py file
+```json
+{
+  "model_setting": {
+          "name": "user_defined",
+          "model_path": "D:/Work/PyCharm/ABFML/example/new-MLFF/LJ-model.py",
+          "field_name": "LJ",
+          "normal_name": "LJNormal",
+          "descriptor" : {
+                         "epsilon": 1.0,
+                         "sigma": 1.5
+          }
+  }
+}
+```
+Then you can  use the relevant modules for training, validation and simulation
