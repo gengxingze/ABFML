@@ -12,7 +12,13 @@ class ABFML(Calculator):
     def __init__(self, model: str, dtype: str = 'float64', **kwargs) -> None:
         Calculator.__init__(self, **kwargs)
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        self.model = torch.jit.load(model)
+        try:
+            self.model = torch.jit.load(model)
+        except RuntimeError:
+            try:
+                self.model = torch.load(model)
+            except Exception as e:
+                raise RuntimeError(f"Failed to load model using both jit and torch.load: {e}")
         if dtype == "float32":
             self.dtype = torch.float32
         else:
