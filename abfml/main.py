@@ -7,7 +7,6 @@ from abfml.entrypoints.valid import valid_mlff
 
 
 def main():
-    print("__main__")
     args = main_parse_args()
     main_command(args=args)
 
