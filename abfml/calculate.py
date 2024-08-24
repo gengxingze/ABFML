@@ -9,7 +9,7 @@ from abfml.data.read_data import ReadData
 class ABFML(Calculator):
     implemented_properties = ['energy', 'energies', 'forces', 'stress', 'stresses']
 
-    def __init__(self, model: str = 'model.pt', dtype: str = 'float64', model_class = None, **kwargs) -> None:
+    def __init__(self, model: str = None, dtype: str = 'float64', model_class = None, **kwargs) -> None:
         Calculator.__init__(self, **kwargs)
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         if model is not None:

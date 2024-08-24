@@ -101,50 +101,44 @@ def main_parser() -> argparse.ArgumentParser:
 
     # **************************************   valid parser end   **************************************
 
-    # ************************************** predict parser start **************************************
-    parser_predict = subparsers.add_parser(
-        "predict",
+    # **************************************   check parser start **************************************
+    parser_check = subparsers.add_parser(
+        "check",
         parents=[],
-        help="predict the model",
+        help="check the model",
         formatter_class=RawTextArgumentDefaultsHelpFormatter,
         epilog=textwrap.dedent(
             """\
         examples:
-            mlff predict -m model.pt -s /path/to/system -n 30
+            abfml check -m model.pt 
+            abfml check -i input.json -d float32
         """
         ),
     )
-    parser_predict.add_argument(
+
+    parser_check_subgroup = parser_check.add_mutually_exclusive_group()
+    parser_check_subgroup.add_argument(
+        "-i",
+        "--input",
+        default=None,
+        type=str,
+        help="the input parameter file in json format.",
+    )
+    parser_check_subgroup.add_argument(
         "-m",
-        "--model",
-        default="model.pt",
-        type=str,
-        help="Predict model file to import",
-    )
-    parser_predict_subgroup = parser_predict.add_mutually_exclusive_group()
-    parser_predict_subgroup.add_argument(
-        "-s",
-        "--system",
+        "--model_name",
         default=None,
         type=str,
-        help="The system dir. Recursively detect systems in this directory",
+        help="check model file to import",
     )
-    parser_predict_subgroup.add_argument(
-        "-f",
-        "--datafile",
-        default=None,
-        nargs="+",
+    parser_check.add_argument(
+        "-d",
+        "--dtype",
+        default="float32",
         type=str,
-        help="The path to file of test list.",
+        help="Accuracy used when checking the model",
     )
-    parser_valid.add_argument(
-        "-r",
-        "--result-detail",
-        default=None,
-        type=str,
-        help="information",
-    )
-    # ************************************** predict parser end   **************************************
+    # ************************************** check parser end   **************************************
 
     # ************************************** compress parser start **************************************
     parser_compress = subparsers.add_parser(

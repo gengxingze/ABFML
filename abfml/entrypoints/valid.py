@@ -4,7 +4,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from torch.utils.data import ConcatDataset, DataLoader, Subset
 from typing import Optional
-from abfml.logger.loggers import Logger, log_data_info
+from abfml.logger.loggers import Logger, log_data_info, log_logo
 from abfml.data.read_data import ReadData
 from abfml.train.trainer import valid_loop
 
@@ -18,16 +18,7 @@ def valid_mlff(
         datafile: Optional[list[str]],
         **kwargs):
     logger = Logger("valid.log").logger
-
-    logger.info(r"################################################################################################")
-    logger.info(r"#                         _       ______   ________  ____    ____  _____                       #")
-    logger.info(r"#                        / \     |_   _ \ |_   __  ||_   \  /   _||_   _|                      #")
-    logger.info(r"#                       / _ \      | |_) |  | |_ \_|  |   \/   |    | |                        #")
-    logger.info(r"#                      / ___ \     |  __'.  |  _|     | |\  /| |    | |   _                    #")
-    logger.info(r"#                    _/ /   \ \_  _| |__) |_| |_     _| |_\/_| |_  _| |__/ |                   #")
-    logger.info(r"#                   |____| |____||_______/|_____|   |_____||_____||________|                   #")
-    logger.info(r"#                                                                                              #")
-    logger.info(r"################################################################################################")
+    log_logo(logger=logger)
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     num_threads = torch.get_num_threads()

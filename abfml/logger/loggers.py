@@ -76,6 +76,18 @@ class Logger(metaclass=Singleton):
         self.logger.addHandler(ch)
 
 
+def log_logo(logger:logging.Logger):
+    logger.info(r"################################################################################################")
+    logger.info(r"#                         _       ______   ________  ____    ____  _____                       #")
+    logger.info(r"#                        / \     |_   _ \ |_   __  ||_   \  /   _||_   _|                      #")
+    logger.info(r"#                       / _ \      | |_) |  | |_ \_|  |   \/   |    | |                        #")
+    logger.info(r"#                      / ___ \     |  __'.  |  _|     | |\  /| |    | |   _                    #")
+    logger.info(r"#                    _/ /   \ \_  _| |__) |_| |_     _| |_\/_| |_  _| |__/ |                   #")
+    logger.info(r"#                   |____| |____||_______/|_____|   |_____||_____||________|                   #")
+    logger.info(r"#                                                                                              #")
+    logger.info(r"################################################################################################")
+
+
 def log_data_info(logger: logging.Logger, dataclass: ReadData):
     total_frames = 0
     logger.info("| ################ file name ############### Atom number ## nframes ######### Element ######## |")
