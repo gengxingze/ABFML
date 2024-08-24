@@ -9,20 +9,27 @@ from abfml.data.read_data import ReadData
 class ABFML(Calculator):
     implemented_properties = ['energy', 'energies', 'forces', 'stress', 'stresses']
 
-    def __init__(self, model: str, dtype: str = 'float64', **kwargs) -> None:
+    def __init__(self, model: str = 'model.pt', dtype: str = 'float64', model_class = None, **kwargs) -> None:
         Calculator.__init__(self, **kwargs)
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        try:
-            self.model = torch.jit.load(model)
-        except RuntimeError:
+        if model is not None:
             try:
-                self.model = torch.load(model)
-            except Exception as e:
-                raise RuntimeError(f"Failed to load model using both jit and torch.load: {e}")
+                self.model = torch.jit.load(model)
+            except RuntimeError:
+                try:
+                    self.model = torch.load(model)
+                except Exception as e:
+                    raise RuntimeError(f"Failed to load model using both jit and torch.load: {e}")
+        elif model_class is not None:
+            self.model = model_class
+        else:
+            raise RuntimeError('Please give the model file')
+
         if dtype == "float32":
             self.dtype = torch.float32
         else:
             self.dtype = torch.float64
+
         self.model.to(self.dtype).to(device=self.device)
         self.model.eval()
 
