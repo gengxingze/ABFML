@@ -2,12 +2,11 @@ import torch
 import numpy as np
 from concurrent.futures import ProcessPoolExecutor
 from functools import partial
-from ase import Atoms
-from ase import io
+from ase import Atoms, io
 from ase.neighborlist import NeighborList
 from typing import List, Optional, Union
 from dataclasses import dataclass
-from .dataset import ABFMLDataset
+from abfml.data.dataset import ABFMLDataset
 
 
 @dataclass
