@@ -70,7 +70,9 @@ To run an example using ABFML, follow these steps:
    abfml train input.json
 #   This command starts the training process using the configurations specified in `input.json`.
 
-# 4. Run lammps:  
+# 4. Quick check for model correctness
+   abfml check -m model.pt -d float32
+# 5. Run lammps:  
    pair_style abfml model.pt
    pair coeff * * 29 30
   
