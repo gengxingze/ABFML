@@ -23,6 +23,6 @@ setup(
               ],
 
     cmdclass={"build_ext": BuildExtension.with_options(no_python_abi_suffix=True)},
-    entry_points={'console_scripts': ['abfml = src.main:main']}
+    entry_points={'console_scripts': ['abfml = abfml.main:main']}
 
 )
