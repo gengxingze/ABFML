@@ -7,7 +7,7 @@
 [INFO]- #                   |____| |____||_______/|_____|   |_____||_____||________|                   #
 [INFO]- #                                                                                              #
 [INFO]- ################################################################################################
-[INFO]- num_threads : 16
+[INFO]- num_threads : 1
 [INFO]- +-------------------------------------- train data file ---------------------------------------+
 [INFO]- | ################ file name ############### Atom number ## nframes ######### Element ######## |
 [INFO]- |                                     test1.extxyz     3       2                Cu
@@ -22,21 +22,21 @@
 [INFO]- ########################################--Start  Train--########################################
 [INFO]- +------------------------------------------Start Loop------------------------------------------+
 [INFO]- |-- Train Epoch:  1, batch size:  1, total iters:      2 --------------------------------------|
-[INFO]- | Train Iters:     1 ,Loss: 4.56e+00 ,Time: 0.184 ,E_tot: 3.31e-01 ,Force: 4.23e+00
-[INFO]- | Train Iters:     2 ,Loss: 4.56e+00 ,Time: 0.021 ,E_tot: 3.35e-01 ,Force: 4.22e+00
-[INFO]- | Train Information: Loss: 4.56e+00 ,Time: 0.204 ,E_tot: 3.33e-01 ,Force: 4.23e+00
+[INFO]- | Train Iters:     1 ,Loss: 3.92e+00 ,Time: 0.030 ,E_tot: 7.81e-01 ,Force: 3.14e+00
+[INFO]- | Train Iters:     2 ,Loss: 3.92e+00 ,Time: 0.010 ,E_tot: 7.83e-01 ,Force: 3.14e+00
+[INFO]- | Train Information: Loss: 3.92e+00 ,Time: 0.040 ,E_tot: 7.82e-01 ,Force: 3.14e+00
 [INFO]- |-- Valid Epoch:  1, batch size:  1, total iters:      2                                       |
-[INFO]- | Valid Iters:     1 ,Loss: 4.65e+00 ,Time: 0.006 ,E_tot: 3.39e-01 ,Force: 4.21e+00 ,Virial: 9.35e-02
-[INFO]- | Valid Iters:     2 ,Loss: 4.65e+00 ,Time: 0.000 ,E_tot: 3.39e-01 ,Force: 4.21e+00 ,Virial: 9.35e-02
-[INFO]- | Valid Information: Loss: 4.65e+00 ,Time: 0.006 ,E_tot: 3.39e-01 ,Force: 4.21e+00 ,Virial: 9.35e-02
+[INFO]- | Valid Iters:     1 ,Loss: 4.39e+00 ,Time: 0.001 ,Virial: 4.72e-01 ,Force: 3.13e+00 ,E_tot: 7.85e-01
+[INFO]- | Valid Iters:     2 ,Loss: 4.39e+00 ,Time: 0.000 ,Virial: 4.72e-01 ,Force: 3.13e+00 ,E_tot: 7.85e-01
+[INFO]- | Valid Information: Loss: 4.39e+00 ,Time: 0.001 ,Virial: 4.72e-01 ,Force: 3.13e+00 ,E_tot: 7.85e-01
 [INFO]- |-- Train Epoch:  2, batch size:  1, total iters:      2 --------------------------------------|
-[INFO]- | Train Iters:     1 ,Loss: 4.55e+00 ,Time: 0.005 ,E_tot: 3.39e-01 ,Force: 4.21e+00
-[INFO]- | Train Iters:     2 ,Loss: 4.55e+00 ,Time: 0.000 ,E_tot: 3.42e-01 ,Force: 4.21e+00
-[INFO]- | Train Information: Loss: 4.55e+00 ,Time: 0.005 ,E_tot: 3.40e-01 ,Force: 4.21e+00
+[INFO]- | Train Iters:     1 ,Loss: 3.92e+00 ,Time: 0.000 ,E_tot: 7.85e-01 ,Force: 3.13e+00
+[INFO]- | Train Iters:     2 ,Loss: 3.92e+00 ,Time: 0.000 ,E_tot: 7.87e-01 ,Force: 3.13e+00
+[INFO]- | Train Information: Loss: 3.92e+00 ,Time: 0.000 ,E_tot: 7.86e-01 ,Force: 3.13e+00
 [INFO]- |-- Valid Epoch:  2, batch size:  1, total iters:      2                                       |
-[INFO]- | Valid Iters:     1 ,Loss: 4.63e+00 ,Time: 0.010 ,E_tot: 3.46e-01 ,Force: 4.20e+00 ,Virial: 8.77e-02
-[INFO]- | Valid Iters:     2 ,Loss: 4.63e+00 ,Time: 0.000 ,E_tot: 3.46e-01 ,Force: 4.20e+00 ,Virial: 8.77e-02
-[INFO]- | Valid Information: Loss: 4.63e+00 ,Time: 0.010 ,E_tot: 3.46e-01 ,Force: 4.20e+00 ,Virial: 8.77e-02
+[INFO]- | Valid Iters:     1 ,Loss: 4.39e+00 ,Time: 0.000 ,Virial: 4.76e-01 ,Force: 3.12e+00 ,E_tot: 7.89e-01
+[INFO]- | Valid Iters:     2 ,Loss: 4.39e+00 ,Time: 0.000 ,Virial: 4.76e-01 ,Force: 3.12e+00 ,E_tot: 7.89e-01
+[INFO]- | Valid Information: Loss: 4.39e+00 ,Time: 0.000 ,Virial: 4.76e-01 ,Force: 3.12e+00 ,E_tot: 7.89e-01
 [INFO]- +------------------------------------------ End Loop ------------------------------------------+
-[INFO]- | Total training time:   12.55s, total training iters:       4
+[INFO]- | Total training time:    0.08s, total training iters:       4
 [INFO]- ######################################## --End  Train-- ########################################
