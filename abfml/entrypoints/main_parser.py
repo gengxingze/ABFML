@@ -14,7 +14,7 @@ def main_parser() -> argparse.ArgumentParser:
         description="ABFML: A package for rapid building, fitting, and application of machine learning force fields",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
-    subparsers = parser.add_subparsers(title="Mlff-kit subcommands", dest="command")
+    subparsers = parser.add_subparsers(title="ABFML-kit subcommands", dest="command")
 
     # **************************************   train parser start **************************************
     parser_train = subparsers.add_parser(
