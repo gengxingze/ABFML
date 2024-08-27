@@ -1,2 +1,2 @@
    Epoch       T_RMSE_Loss       V_RMSE_Loss      T_RMSE_E_tot      V_RMSE_E_tot      T_RMSE_Force      V_RMSE_Force     T_RMSE_Virial     V_RMSE_Virial      Total_Time(s)
-       1       1.10296e+00       9.40664e-01       3.00878e-01       1.46002e-01       2.33526e-01       1.31890e-01       5.68560e-01       6.62772e-01           13.71
+       1       1.02422e+00       8.90490e-01       1.43179e-01       6.41051e-02       2.29532e-01       1.31816e-01       6.51507e-01       6.94569e-01           13.55
