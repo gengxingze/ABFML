@@ -1,4 +1,4 @@
-___
+from sympy.physics.units import forcefrom sympy.physics.units import energy___
 # ABFML 
 
 ## 1. Introduction
@@ -27,6 +27,9 @@ To get started with ABFML, follow these steps to set up the environment and inst
 #   This installs ABFML from the local directory.
 ```
 ### 2.2 Installing ABFML-LAMMPS
+In general for force field development users, this step can be skipped for now.
+It would be more efficient to apply it to large-scale molecular dynamics
+when all aspects of the force field are relevantly calculated/checked by the more convenient ASEs
 To integrate ABFML with LAMMPS, follow these steps:
 ```bash
 # 1. Download LAMMPS:
@@ -53,11 +56,18 @@ To integrate ABFML with LAMMPS, follow these steps:
    cd src
    make yes-abfml
    make mpi
+
+# 6. Run lammps:  
+   pair_style abfml model.pt
+   pair coeff * * 29 30
+  
+#   Use the element number to represent the element type
 ```
 **Note**: Ensure your GCC compiler is version 9.0 or above, as older versions may not support.
 
 ## 3. Build a new model
-Build your own model input in the input file and specify the path to the model's py file
+Build your own model input in the input file and specify the path to the model's py file,
+This is an example of a simple LJ potential, which can be found in example/new-model。
 ```json
 {
   "model_setting": {
@@ -72,7 +82,7 @@ Build your own model input in the input file and specify the path to the model's
   }
 }
 ```
-Then you can  use the relevant modules for training, validation and simulation
+Then you can use the relevant modules for training, validation and simulation
 
 ## 4. Run
 
@@ -84,15 +94,24 @@ To run an example using ABFML, follow these steps:
 # 2. Navigate to the example directory:
    cd abfml/example/dp
   
-# 3. Run:
+# 3. Quick check for model correctness
+   abfml check -m model.pt -d float32
+   
+# 4. train:
    abfml train input.json
 #   This command starts the training process using the configurations specified in `input.json`.
 
-# 4. Quick check for model correctness
-   abfml check -m model.pt -d float32
-# 5. Run lammps:  
-   pair_style abfml model.pt
-   pair coeff * * 29 30
-  
-#   Use the element number to represent the element type
+# 5. valid:
+   abfml valid -m 'model.pt' -f "../data/test.extxyz" -n 10
+```
+
+Use the ASE calculator to perform quick calculations on the model created.
+```python
+from abfml.calculate import ABFML
+from ase.build import bulk
+calc = ABFML('model.pt')
+structure = bulk('Cu', a=3.62)
+structure.calc = calc
+energy = structure.get_potential_energy()
+force = structure.get_forces()
 ```

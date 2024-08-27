@@ -1,0 +1,64 @@
+{
+"name": "model_parameters",
+"global_setting": {
+          "type_map":[29],
+          "neighbor": [100],
+          "cutoff": 6.0,
+          "dtype": "float64",
+          "logger_file": "mlff.log"
+},
+"model_setting": {
+          "name": "dp_se_e2_a",
+          "descriptor" : {
+                         "R_max": 6.0,
+                         "R_min": 0.5,
+                         "smooth_fun": "poly2_r",
+                         "network_size": [25,50,100],
+                         "bias": true,
+                         "resnet_dt": false,
+                         "activate_function": "tanh",
+                         "M2": 16
+              },
+          "fitting_net": {
+                         "network_size": [200,200,200],
+                         "bias": true,
+                         "resnet_dt": true,
+                         "activate_function": "tanh"
+              }
+},
+"data_setting": {
+               "file_format": "extxyz",
+               "shuffle": true,
+               "train_file":  ["../data/test.extxyz"],
+               "valid_file":  ["../data/test.extxyz"]
+},
+"train_setting": {
+               "epoch": 1,
+               "optimizer":"Adam",
+               "save_check": 5,
+               "batch_size": 1,
+               "print_freq": 1,
+               "model_file": "model.pt",
+               "freeze_param": []
+
+},
+"loss_setting": {
+               "start_energy_weight": 1.0,
+               "limit_energy_weight": 10.0,
+               "start_force_weight": 100.0,
+               "limit_force_weight": 10.0,
+               "start_virial_weight": 1.0,
+               "limit_virial_weight": 1.0,
+               "start_ei_weight": 0.0,
+               "limit_ei_weight": 0.0,
+               "loss_file": "loss.curve"
+
+},
+"learning_rate" :{
+                  "type_name": "exp",
+                  "decay_step": 500,
+                  "decay_rate": 0.95,
+                  "start_lr":	1.0e-3,
+                  "limit_lr":	1.0e-6
+    }
+}

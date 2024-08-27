@@ -102,7 +102,7 @@ class FeatureNormal(NormalModel):
                                         torch.zeros(ntype, requires_grad=False)]
         from abfml.model.field_model_bp import BPMlp
         for i, image_batch in enumerate(normal_loader):
-            neighbor_list = image_batch['neighbor_list']
+            Nij= image_batch['Nij']
             Zij = image_batch['Zij']
             Rij = image_batch["Rij"]
             Zi = image_batch["Zi"]
@@ -112,7 +112,7 @@ class FeatureNormal(NormalModel):
                                             bp_features_information=param_class.BPDescriptor.bp_features_information,
                                             bp_features_param=param_class.BPDescriptor.bp_features_param,
                                             element_map=element_type,
-                                            neighbor_list=neighbor_list,
+                                            Nij=Nij,
                                             Zij=Zij,
                                             Rij=Rij)
 

@@ -19,7 +19,7 @@ def check_mlff(
         input: Optional[str] = None,
         dtype: str = "float32",
         **kwargs):
-    logger = Logger("valid.log").logger
+    logger = Logger("check.log").logger
     log_logo(logger=logger)
 
     if input is not None:
@@ -83,6 +83,26 @@ def check_mlff(
     logger.info(f"+----------------------------------------------------------------------------------------------+")
 
     logger.info(f"+-------------------------------------- periodicity check -------------------------------------+")
+    cluster = bulk('Cu', 'fcc', a=3.62, cubic=True)
+    cluster.calc = calculator
+    energy = [cluster.get_potential_energy()]
+    force = [cluster.get_forces()]
+    cluster = cluster * (3, 3, 3)
+    cluster.calc = calculator
+    energy.append(cluster.get_potential_energy())
+    force.append(cluster.get_forces())
+    dE = energy[1] - energy[0] * 27
+    dF = np.abs(force[1][:4] - force[0]).sum().item()
+    logger.info(f"       bulk-> energy: {energy[0]:>.6f}, force: {force[0].sum().item():>.6f}")
+    logger.info(f" 3*3*3 bulk-> energy: {energy[1]:>.6f}, force: {force[1].sum().item():>.6f}")
+    logger.info(f" difference-> E[1]-E[0]*27: {dE:>.6f},  dF: {dF:>.6f}")
+    logger.info(f"Information: The energy of the expanded cell of a periodic structure is proportional to the number")
+    logger.info(f"             of times it is expanded and the force on the corresponding atoms is unchanged.")
+    logger.warning(f"If the difference is less than 1e-5 it may be an accuracy problem,")
+    logger.warning(f"otherwise the energy and force relationship should be checked.")
+    logger.info(f"+----------------------------------------------------------------------------------------------+")
+
+    logger.info(f"+------------------------------------- energy-force check -------------------------------------+")
     cluster = Atoms(element_symbol + '3', position)
     cluster.calc = calculator
     energy = [cluster.get_potential_energy()]
@@ -100,22 +120,3 @@ def check_mlff(
     logger.warning(f"otherwise the energy and force relationship should be checked.")
     logger.info(f"+----------------------------------------------------------------------------------------------+")
 
-    logger.info(f"+------------------------------------- energy-force check -------------------------------------+")
-    cluster = bulk('Cu', 'fcc', a=3.62, cubic=True)
-    cluster.calc = calculator
-    energy = [cluster.get_potential_energy()]
-    force = [cluster.get_forces()]
-    cluster = cluster * (3,3,3)
-    cluster.calc = calculator
-    energy.append(cluster.get_potential_energy())
-    force.append(cluster.get_forces())
-    dE = energy[1] - energy[0] * 27
-    dF = np.abs(force[1][:4] - force[0]).sum().item()
-    logger.info(f"       bulk-> energy: {energy[0]:>.6f}, force: {force[0].sum().item():>.6f}")
-    logger.info(f" 3*3*3 bulk-> energy: {energy[1]:>.6f}, force: {force[1].sum().item():>.6f}")
-    logger.info(f" difference-> E[1]-E[0]*27: {dE:>.6f},  dF: {dF:>.6f}")
-    logger.info(f"Information: The energy of the expanded cell of a periodic structure is proportional to the number")
-    logger.info(f"             of times it is expanded and the force on the corresponding atoms is unchanged.")
-    logger.warning(f"If the difference is less than 1e-5 it may be an accuracy problem,")
-    logger.warning(f"otherwise the energy and force relationship should be checked.")
-    logger.info(f"+----------------------------------------------------------------------------------------------+")

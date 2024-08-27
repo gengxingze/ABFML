@@ -33,7 +33,8 @@ class LJ(FieldModel):
               n_ghost: int) -> Tuple[torch.Tensor, torch.Tensor]:
         device = Rij.device
         dtype = Rij.dtype
-        # 12/6 Lennard-Jones potential: E= 4*epsilon[(sigma/r)^12 - (sigma/r)^6]
+        # Rij[batch, n_atom, neighbor, 4] 4->[rij, xij, yij, zij]
+        # 12/6 Lennard-Jones potential: E= 4*epsilon[(sigma/rij)^12 - (sigma/rij)^6]
         rij = Rij[:, :, :, 0]
         mask_rij = (rij > 1e-5)
         rr = torch.zeros(rij.shape, dtype=dtype, device=device)

@@ -7,28 +7,224 @@
 [INFO]- #                   |____| |____||_______/|_____|   |_____||_____||________|                   #
 [INFO]- #                                                                                              #
 [INFO]- ################################################################################################
-[INFO]- num_threads : 16
+[INFO]- num_threads : 1
 [INFO]- +-------------------------------------- train data file ---------------------------------------+
 [INFO]- | ################ file name ############### Atom number ## nframes ######### Element ######## |
-[INFO]- |                                     test1.extxyz     3       2                Cu
-[INFO]- | Number of files found:    1, number of image :    2
+[INFO]- |                              ../data/test.extxyz   128     100                Cu
+[INFO]- | Number of files found:    1, number of image :  100
 [INFO]- +----------------------------------------------------------------------------------------------+
 [INFO]- +-------------------------------------- valid data file ---------------------------------------+
 [INFO]- | ################ file name ############### Atom number ## nframes ######### Element ######## |
-[INFO]- |                                     test1.extxyz     3       2                Cu
-[INFO]- | Number of files found:    1, number of image :    2
+[INFO]- |                              ../data/test.extxyz   128     100                Cu
+[INFO]- | Number of files found:    1, number of image :  100
 [INFO]- +----------------------------------------------------------------------------------------------+
-[WARNING]- Need 54636 epochs to reach limit_lr, but only train for 1 epochs!
+[WARNING]- Need 1093 epochs to reach limit_lr, but only train for 1 epochs!
 [INFO]- ########################################--Start  Train--########################################
 [INFO]- +------------------------------------------Start Loop------------------------------------------+
-[INFO]- |-- Train Epoch:  1, batch size:  1, total iters:      2 --------------------------------------|
-[INFO]- | Train Iters:     1 ,Loss: 3.42e+00 ,Time: 0.028 ,E_tot: 1.31e+00 ,Force: 2.11e+00
-[INFO]- | Train Iters:     2 ,Loss: 3.09e+00 ,Time: 0.037 ,E_tot: 1.27e+00 ,Force: 1.83e+00
-[INFO]- | Train Information: Loss: 3.26e+00 ,Time: 0.065 ,E_tot: 1.29e+00 ,Force: 1.97e+00
-[INFO]- |-- Valid Epoch:  1, batch size:  1, total iters:      2                                       |
-[INFO]- | Valid Iters:     1 ,Loss: 4.03e+00 ,Time: 0.006 ,E_tot: 1.23e+00 ,Virial: 1.26e+00 ,Force: 1.54e+00
-[INFO]- | Valid Iters:     2 ,Loss: 4.03e+00 ,Time: 0.009 ,E_tot: 1.23e+00 ,Virial: 1.26e+00 ,Force: 1.54e+00
-[INFO]- | Valid Information: Loss: 4.03e+00 ,Time: 0.014 ,E_tot: 1.23e+00 ,Virial: 1.26e+00 ,Force: 1.54e+00
+[INFO]- |-- Train Epoch:  1, batch size:  1, total iters:    100 --------------------------------------|
+[INFO]- | Train Iters:     1 ,Loss: 1.33e+00 ,Time: 1.145 ,E_tot: 8.95e-01 ,Force: 4.34e-01
+[INFO]- | Train Iters:     2 ,Loss: 1.13e+00 ,Time: 0.424 ,E_tot: 7.09e-01 ,Force: 4.21e-01
+[INFO]- | Train Iters:     3 ,Loss: 9.35e-01 ,Time: 0.383 ,E_tot: 5.47e-01 ,Force: 3.88e-01
+[INFO]- | Train Iters:     4 ,Loss: 7.95e-01 ,Time: 0.378 ,E_tot: 4.06e-01 ,Force: 3.89e-01
+[INFO]- | Train Iters:     5 ,Loss: 6.48e-01 ,Time: 0.378 ,E_tot: 2.91e-01 ,Force: 3.57e-01
+[INFO]- | Train Iters:     6 ,Loss: 5.44e-01 ,Time: 0.396 ,E_tot: 1.97e-01 ,Force: 3.47e-01
+[INFO]- | Train Iters:     7 ,Loss: 4.51e-01 ,Time: 0.376 ,E_tot: 1.31e-01 ,Force: 3.21e-01
+[INFO]- | Train Iters:     8 ,Loss: 3.55e-01 ,Time: 0.383 ,E_tot: 8.18e-02 ,Force: 2.73e-01
+[INFO]- | Train Iters:     9 ,Loss: 3.67e-01 ,Time: 0.386 ,E_tot: 6.23e-02 ,Force: 3.05e-01
+[INFO]- | Train Iters:    10 ,Loss: 3.54e-01 ,Time: 0.380 ,E_tot: 5.86e-02 ,Force: 2.95e-01
+[INFO]- | Train Iters:    11 ,Loss: 3.41e-01 ,Time: 0.385 ,E_tot: 7.29e-02 ,Force: 2.68e-01
+[INFO]- | Train Iters:    12 ,Loss: 3.46e-01 ,Time: 0.380 ,E_tot: 9.84e-02 ,Force: 2.48e-01
+[INFO]- | Train Iters:    13 ,Loss: 3.38e-01 ,Time: 0.373 ,E_tot: 1.29e-01 ,Force: 2.09e-01
+[INFO]- | Train Iters:    14 ,Loss: 3.49e-01 ,Time: 0.382 ,E_tot: 1.65e-01 ,Force: 1.84e-01
+[INFO]- | Train Iters:    15 ,Loss: 4.16e-01 ,Time: 0.378 ,E_tot: 2.04e-01 ,Force: 2.12e-01
+[INFO]- | Train Iters:    16 ,Loss: 4.31e-01 ,Time: 0.387 ,E_tot: 2.36e-01 ,Force: 1.96e-01
+[INFO]- | Train Iters:    17 ,Loss: 3.90e-01 ,Time: 0.386 ,E_tot: 2.51e-01 ,Force: 1.39e-01
+[INFO]- | Train Iters:    18 ,Loss: 4.03e-01 ,Time: 0.385 ,E_tot: 2.56e-01 ,Force: 1.47e-01
+[INFO]- | Train Iters:    19 ,Loss: 4.01e-01 ,Time: 0.382 ,E_tot: 2.45e-01 ,Force: 1.57e-01
+[INFO]- | Train Iters:    20 ,Loss: 3.41e-01 ,Time: 0.384 ,E_tot: 2.08e-01 ,Force: 1.33e-01
+[INFO]- | Train Iters:    21 ,Loss: 3.25e-01 ,Time: 0.386 ,E_tot: 1.61e-01 ,Force: 1.64e-01
+[INFO]- | Train Iters:    22 ,Loss: 2.53e-01 ,Time: 0.382 ,E_tot: 9.91e-02 ,Force: 1.54e-01
+[INFO]- | Train Iters:    23 ,Loss: 1.72e-01 ,Time: 0.388 ,E_tot: 2.98e-02 ,Force: 1.42e-01
+[INFO]- | Train Iters:    24 ,Loss: 1.89e-01 ,Time: 0.382 ,E_tot: 3.30e-02 ,Force: 1.56e-01
+[INFO]- | Train Iters:    25 ,Loss: 2.49e-01 ,Time: 0.386 ,E_tot: 9.25e-02 ,Force: 1.57e-01
+[INFO]- | Train Iters:    26 ,Loss: 2.88e-01 ,Time: 0.380 ,E_tot: 1.44e-01 ,Force: 1.44e-01
+[INFO]- | Train Iters:    27 ,Loss: 3.34e-01 ,Time: 0.376 ,E_tot: 1.80e-01 ,Force: 1.55e-01
+[INFO]- | Train Iters:    28 ,Loss: 3.42e-01 ,Time: 0.382 ,E_tot: 2.03e-01 ,Force: 1.40e-01
+[INFO]- | Train Iters:    29 ,Loss: 3.56e-01 ,Time: 0.386 ,E_tot: 2.07e-01 ,Force: 1.49e-01
+[INFO]- | Train Iters:    30 ,Loss: 3.43e-01 ,Time: 0.381 ,E_tot: 1.98e-01 ,Force: 1.45e-01
+[INFO]- | Train Iters:    31 ,Loss: 2.96e-01 ,Time: 0.380 ,E_tot: 1.68e-01 ,Force: 1.28e-01
+[INFO]- | Train Iters:    32 ,Loss: 2.63e-01 ,Time: 0.382 ,E_tot: 1.23e-01 ,Force: 1.40e-01
+[INFO]- | Train Iters:    33 ,Loss: 2.03e-01 ,Time: 0.382 ,E_tot: 6.85e-02 ,Force: 1.34e-01
+[INFO]- | Train Iters:    34 ,Loss: 1.31e-01 ,Time: 0.371 ,E_tot: 1.45e-02 ,Force: 1.16e-01
+[INFO]- | Train Iters:    35 ,Loss: 1.74e-01 ,Time: 0.394 ,E_tot: 3.98e-02 ,Force: 1.34e-01
+[INFO]- | Train Iters:    36 ,Loss: 2.24e-01 ,Time: 0.380 ,E_tot: 8.97e-02 ,Force: 1.34e-01
+[INFO]- | Train Iters:    37 ,Loss: 2.41e-01 ,Time: 0.379 ,E_tot: 1.29e-01 ,Force: 1.11e-01
+[INFO]- | Train Iters:    38 ,Loss: 2.84e-01 ,Time: 0.381 ,E_tot: 1.55e-01 ,Force: 1.28e-01
+[INFO]- | Train Iters:    39 ,Loss: 2.96e-01 ,Time: 0.379 ,E_tot: 1.63e-01 ,Force: 1.33e-01
+[INFO]- | Train Iters:    40 ,Loss: 2.59e-01 ,Time: 0.381 ,E_tot: 1.56e-01 ,Force: 1.03e-01
+[INFO]- | Train Iters:    41 ,Loss: 2.40e-01 ,Time: 0.383 ,E_tot: 1.38e-01 ,Force: 1.01e-01
+[INFO]- | Train Iters:    42 ,Loss: 2.09e-01 ,Time: 0.382 ,E_tot: 1.11e-01 ,Force: 9.81e-02
+[INFO]- | Train Iters:    43 ,Loss: 2.01e-01 ,Time: 0.383 ,E_tot: 7.92e-02 ,Force: 1.21e-01
+[INFO]- | Train Iters:    44 ,Loss: 1.63e-01 ,Time: 0.379 ,E_tot: 4.28e-02 ,Force: 1.20e-01
+[INFO]- | Train Iters:    45 ,Loss: 1.13e-01 ,Time: 0.382 ,E_tot: 1.16e-02 ,Force: 1.01e-01
+[INFO]- | Train Iters:    46 ,Loss: 1.24e-01 ,Time: 0.388 ,E_tot: 1.10e-02 ,Force: 1.13e-01
+[INFO]- | Train Iters:    47 ,Loss: 1.36e-01 ,Time: 0.387 ,E_tot: 2.10e-02 ,Force: 1.15e-01
+[INFO]- | Train Iters:    48 ,Loss: 1.45e-01 ,Time: 0.386 ,E_tot: 1.93e-02 ,Force: 1.26e-01
+[INFO]- | Train Iters:    49 ,Loss: 9.61e-02 ,Time: 0.385 ,E_tot: 2.88e-03 ,Force: 9.32e-02
+[INFO]- | Train Iters:    50 ,Loss: 1.31e-01 ,Time: 0.386 ,E_tot: 2.29e-02 ,Force: 1.08e-01
+[INFO]- | Train Iters:    51 ,Loss: 1.66e-01 ,Time: 0.388 ,E_tot: 5.32e-02 ,Force: 1.13e-01
+[INFO]- | Train Iters:    52 ,Loss: 1.76e-01 ,Time: 0.382 ,E_tot: 7.72e-02 ,Force: 9.89e-02
+[INFO]- | Train Iters:    53 ,Loss: 2.03e-01 ,Time: 0.384 ,E_tot: 9.09e-02 ,Force: 1.12e-01
+[INFO]- | Train Iters:    54 ,Loss: 1.89e-01 ,Time: 0.384 ,E_tot: 9.03e-02 ,Force: 9.87e-02
+[INFO]- | Train Iters:    55 ,Loss: 1.93e-01 ,Time: 0.388 ,E_tot: 7.85e-02 ,Force: 1.14e-01
+[INFO]- | Train Iters:    56 ,Loss: 1.67e-01 ,Time: 0.382 ,E_tot: 5.93e-02 ,Force: 1.08e-01
+[INFO]- | Train Iters:    57 ,Loss: 1.41e-01 ,Time: 0.384 ,E_tot: 3.61e-02 ,Force: 1.05e-01
+[INFO]- | Train Iters:    58 ,Loss: 1.11e-01 ,Time: 0.388 ,E_tot: 1.54e-02 ,Force: 9.57e-02
+[INFO]- | Train Iters:    59 ,Loss: 1.16e-01 ,Time: 0.385 ,E_tot: 5.25e-03 ,Force: 1.11e-01
+[INFO]- | Train Iters:    60 ,Loss: 1.27e-01 ,Time: 0.387 ,E_tot: 2.44e-02 ,Force: 1.03e-01
+[INFO]- | Train Iters:    61 ,Loss: 1.41e-01 ,Time: 0.389 ,E_tot: 4.81e-02 ,Force: 9.32e-02
+[INFO]- | Train Iters:    62 ,Loss: 1.62e-01 ,Time: 0.389 ,E_tot: 7.11e-02 ,Force: 9.05e-02
+[INFO]- | Train Iters:    63 ,Loss: 1.94e-01 ,Time: 0.385 ,E_tot: 8.80e-02 ,Force: 1.06e-01
+[INFO]- | Train Iters:    64 ,Loss: 1.85e-01 ,Time: 0.381 ,E_tot: 8.30e-02 ,Force: 1.02e-01
+[INFO]- | Train Iters:    65 ,Loss: 1.63e-01 ,Time: 0.380 ,E_tot: 5.88e-02 ,Force: 1.04e-01
+[INFO]- | Train Iters:    66 ,Loss: 1.11e-01 ,Time: 0.381 ,E_tot: 2.45e-02 ,Force: 8.62e-02
+[INFO]- | Train Iters:    67 ,Loss: 1.02e-01 ,Time: 0.381 ,E_tot: 4.58e-03 ,Force: 9.76e-02
+[INFO]- | Train Iters:    68 ,Loss: 1.31e-01 ,Time: 0.385 ,E_tot: 2.65e-02 ,Force: 1.05e-01
+[INFO]- | Train Iters:    69 ,Loss: 1.25e-01 ,Time: 0.382 ,E_tot: 4.28e-02 ,Force: 8.23e-02
+[INFO]- | Train Iters:    70 ,Loss: 1.27e-01 ,Time: 0.383 ,E_tot: 4.57e-02 ,Force: 8.11e-02
+[INFO]- | Train Iters:    71 ,Loss: 1.16e-01 ,Time: 0.381 ,E_tot: 3.48e-02 ,Force: 8.13e-02
+[INFO]- | Train Iters:    72 ,Loss: 9.46e-02 ,Time: 0.387 ,E_tot: 1.28e-02 ,Force: 8.18e-02
+[INFO]- | Train Iters:    73 ,Loss: 1.19e-01 ,Time: 0.378 ,E_tot: 1.29e-02 ,Force: 1.06e-01
+[INFO]- | Train Iters:    74 ,Loss: 1.24e-01 ,Time: 0.381 ,E_tot: 2.75e-02 ,Force: 9.69e-02
+[INFO]- | Train Iters:    75 ,Loss: 1.21e-01 ,Time: 0.384 ,E_tot: 2.70e-02 ,Force: 9.43e-02
+[INFO]- | Train Iters:    76 ,Loss: 9.01e-02 ,Time: 0.386 ,E_tot: 1.09e-02 ,Force: 7.92e-02
+[INFO]- | Train Iters:    77 ,Loss: 1.15e-01 ,Time: 0.380 ,E_tot: 1.35e-02 ,Force: 1.02e-01
+[INFO]- | Train Iters:    78 ,Loss: 1.45e-01 ,Time: 0.377 ,E_tot: 4.38e-02 ,Force: 1.02e-01
+[INFO]- | Train Iters:    79 ,Loss: 1.58e-01 ,Time: 0.379 ,E_tot: 6.71e-02 ,Force: 9.11e-02
+[INFO]- | Train Iters:    80 ,Loss: 1.48e-01 ,Time: 0.385 ,E_tot: 7.22e-02 ,Force: 7.56e-02
+[INFO]- | Train Iters:    81 ,Loss: 1.33e-01 ,Time: 0.380 ,E_tot: 5.76e-02 ,Force: 7.50e-02
+[INFO]- | Train Iters:    82 ,Loss: 1.30e-01 ,Time: 0.379 ,E_tot: 3.12e-02 ,Force: 9.84e-02
+[INFO]- | Train Iters:    83 ,Loss: 1.01e-01 ,Time: 0.378 ,E_tot: 7.42e-03 ,Force: 9.40e-02
+[INFO]- | Train Iters:    84 ,Loss: 9.96e-02 ,Time: 0.383 ,E_tot: 1.34e-02 ,Force: 8.62e-02
+[INFO]- | Train Iters:    85 ,Loss: 1.02e-01 ,Time: 0.382 ,E_tot: 2.67e-02 ,Force: 7.48e-02
+[INFO]- | Train Iters:    86 ,Loss: 1.30e-01 ,Time: 0.379 ,E_tot: 3.92e-02 ,Force: 9.11e-02
+[INFO]- | Train Iters:    87 ,Loss: 1.30e-01 ,Time: 0.382 ,E_tot: 4.37e-02 ,Force: 8.60e-02
+[INFO]- | Train Iters:    88 ,Loss: 1.18e-01 ,Time: 0.383 ,E_tot: 4.26e-02 ,Force: 7.51e-02
+[INFO]- | Train Iters:    89 ,Loss: 1.27e-01 ,Time: 0.386 ,E_tot: 3.71e-02 ,Force: 9.04e-02
+[INFO]- | Train Iters:    90 ,Loss: 8.97e-02 ,Time: 0.393 ,E_tot: 1.74e-02 ,Force: 7.23e-02
+[INFO]- | Train Iters:    91 ,Loss: 8.61e-02 ,Time: 0.382 ,E_tot: 2.40e-03 ,Force: 8.37e-02
+[INFO]- | Train Iters:    92 ,Loss: 9.09e-02 ,Time: 0.381 ,E_tot: 6.42e-03 ,Force: 8.45e-02
+[INFO]- | Train Iters:    93 ,Loss: 7.46e-02 ,Time: 0.380 ,E_tot: 4.18e-03 ,Force: 7.04e-02
+[INFO]- | Train Iters:    94 ,Loss: 8.20e-02 ,Time: 0.382 ,E_tot: 5.05e-03 ,Force: 7.70e-02
+[INFO]- | Train Iters:    95 ,Loss: 8.59e-02 ,Time: 0.381 ,E_tot: 8.02e-03 ,Force: 7.79e-02
+[INFO]- | Train Iters:    96 ,Loss: 7.19e-02 ,Time: 0.389 ,E_tot: 5.03e-03 ,Force: 6.69e-02
+[INFO]- | Train Iters:    97 ,Loss: 9.68e-02 ,Time: 0.379 ,E_tot: 8.27e-03 ,Force: 8.85e-02
+[INFO]- | Train Iters:    98 ,Loss: 7.57e-02 ,Time: 0.379 ,E_tot: 1.09e-02 ,Force: 6.49e-02
+[INFO]- | Train Iters:    99 ,Loss: 9.98e-02 ,Time: 0.386 ,E_tot: 1.39e-02 ,Force: 8.59e-02
+[INFO]- | Train Iters:   100 ,Loss: 8.34e-02 ,Time: 0.381 ,E_tot: 1.80e-03 ,Force: 8.16e-02
+[INFO]- | Train Information: Loss: 2.37e-01 ,Time: 39.083 ,E_tot: 9.89e-02 ,Force: 1.38e-01
+[INFO]- |-- Valid Epoch:  1, batch size:  1, total iters:    100                                       |
+[INFO]- | Valid Iters:     1 ,Loss: 2.25e-01 ,Time: 0.163 ,Force: 6.31e-02 ,Virial: 1.41e-01 ,E_tot: 2.10e-02
+[INFO]- | Valid Iters:     2 ,Loss: 2.25e-01 ,Time: 0.561 ,Force: 6.31e-02 ,Virial: 1.41e-01 ,E_tot: 2.10e-02
+[INFO]- | Valid Iters:     3 ,Loss: 2.25e-01 ,Time: 0.284 ,Force: 6.32e-02 ,Virial: 1.41e-01 ,E_tot: 2.09e-02
+[INFO]- | Valid Iters:     4 ,Loss: 2.25e-01 ,Time: 0.180 ,Force: 6.32e-02 ,Virial: 1.41e-01 ,E_tot: 2.09e-02
+[INFO]- | Valid Iters:     5 ,Loss: 2.25e-01 ,Time: 0.176 ,Force: 6.33e-02 ,Virial: 1.41e-01 ,E_tot: 2.09e-02
+[INFO]- | Valid Iters:     6 ,Loss: 2.24e-01 ,Time: 0.169 ,Force: 6.33e-02 ,Virial: 1.40e-01 ,E_tot: 2.09e-02
+[INFO]- | Valid Iters:     7 ,Loss: 2.24e-01 ,Time: 0.220 ,Force: 6.34e-02 ,Virial: 1.40e-01 ,E_tot: 2.08e-02
+[INFO]- | Valid Iters:     8 ,Loss: 2.24e-01 ,Time: 0.169 ,Force: 6.34e-02 ,Virial: 1.40e-01 ,E_tot: 2.08e-02
+[INFO]- | Valid Iters:     9 ,Loss: 2.24e-01 ,Time: 0.168 ,Force: 6.34e-02 ,Virial: 1.39e-01 ,E_tot: 2.08e-02
+[INFO]- | Valid Iters:    10 ,Loss: 2.23e-01 ,Time: 0.176 ,Force: 6.34e-02 ,Virial: 1.39e-01 ,E_tot: 2.08e-02
+[INFO]- | Valid Iters:    11 ,Loss: 2.23e-01 ,Time: 0.173 ,Force: 6.35e-02 ,Virial: 1.39e-01 ,E_tot: 2.08e-02
+[INFO]- | Valid Iters:    12 ,Loss: 2.22e-01 ,Time: 0.172 ,Force: 6.35e-02 ,Virial: 1.38e-01 ,E_tot: 2.08e-02
+[INFO]- | Valid Iters:    13 ,Loss: 2.21e-01 ,Time: 0.172 ,Force: 6.35e-02 ,Virial: 1.37e-01 ,E_tot: 2.07e-02
+[INFO]- | Valid Iters:    14 ,Loss: 2.20e-01 ,Time: 0.252 ,Force: 6.35e-02 ,Virial: 1.36e-01 ,E_tot: 2.07e-02
+[INFO]- | Valid Iters:    15 ,Loss: 2.19e-01 ,Time: 0.172 ,Force: 6.35e-02 ,Virial: 1.35e-01 ,E_tot: 2.07e-02
+[INFO]- | Valid Iters:    16 ,Loss: 2.18e-01 ,Time: 0.168 ,Force: 6.35e-02 ,Virial: 1.34e-01 ,E_tot: 2.07e-02
+[INFO]- | Valid Iters:    17 ,Loss: 2.17e-01 ,Time: 0.172 ,Force: 6.35e-02 ,Virial: 1.33e-01 ,E_tot: 2.07e-02
+[INFO]- | Valid Iters:    18 ,Loss: 2.16e-01 ,Time: 0.172 ,Force: 6.36e-02 ,Virial: 1.32e-01 ,E_tot: 2.07e-02
+[INFO]- | Valid Iters:    19 ,Loss: 2.15e-01 ,Time: 0.172 ,Force: 6.36e-02 ,Virial: 1.30e-01 ,E_tot: 2.07e-02
+[INFO]- | Valid Iters:    20 ,Loss: 2.13e-01 ,Time: 0.168 ,Force: 6.37e-02 ,Virial: 1.29e-01 ,E_tot: 2.07e-02
+[INFO]- | Valid Iters:    21 ,Loss: 2.12e-01 ,Time: 0.168 ,Force: 6.38e-02 ,Virial: 1.28e-01 ,E_tot: 2.06e-02
+[INFO]- | Valid Iters:    22 ,Loss: 2.11e-01 ,Time: 0.168 ,Force: 6.40e-02 ,Virial: 1.26e-01 ,E_tot: 2.06e-02
+[INFO]- | Valid Iters:    23 ,Loss: 2.09e-01 ,Time: 0.164 ,Force: 6.41e-02 ,Virial: 1.24e-01 ,E_tot: 2.06e-02
+[INFO]- | Valid Iters:    24 ,Loss: 2.08e-01 ,Time: 0.192 ,Force: 6.43e-02 ,Virial: 1.23e-01 ,E_tot: 2.06e-02
+[INFO]- | Valid Iters:    25 ,Loss: 2.06e-01 ,Time: 0.168 ,Force: 6.45e-02 ,Virial: 1.21e-01 ,E_tot: 2.06e-02
+[INFO]- | Valid Iters:    26 ,Loss: 2.04e-01 ,Time: 0.172 ,Force: 6.48e-02 ,Virial: 1.19e-01 ,E_tot: 2.07e-02
+[INFO]- | Valid Iters:    27 ,Loss: 2.03e-01 ,Time: 0.173 ,Force: 6.51e-02 ,Virial: 1.17e-01 ,E_tot: 2.07e-02
+[INFO]- | Valid Iters:    28 ,Loss: 2.01e-01 ,Time: 0.176 ,Force: 6.54e-02 ,Virial: 1.15e-01 ,E_tot: 2.07e-02
+[INFO]- | Valid Iters:    29 ,Loss: 2.00e-01 ,Time: 0.180 ,Force: 6.57e-02 ,Virial: 1.13e-01 ,E_tot: 2.07e-02
+[INFO]- | Valid Iters:    30 ,Loss: 1.98e-01 ,Time: 0.172 ,Force: 6.61e-02 ,Virial: 1.11e-01 ,E_tot: 2.07e-02
+[INFO]- | Valid Iters:    31 ,Loss: 1.97e-01 ,Time: 0.173 ,Force: 6.65e-02 ,Virial: 1.09e-01 ,E_tot: 2.07e-02
+[INFO]- | Valid Iters:    32 ,Loss: 1.95e-01 ,Time: 0.176 ,Force: 6.70e-02 ,Virial: 1.07e-01 ,E_tot: 2.07e-02
+[INFO]- | Valid Iters:    33 ,Loss: 1.93e-01 ,Time: 0.168 ,Force: 6.75e-02 ,Virial: 1.05e-01 ,E_tot: 2.08e-02
+[INFO]- | Valid Iters:    34 ,Loss: 1.92e-01 ,Time: 0.176 ,Force: 6.80e-02 ,Virial: 1.03e-01 ,E_tot: 2.08e-02
+[INFO]- | Valid Iters:    35 ,Loss: 1.90e-01 ,Time: 0.181 ,Force: 6.86e-02 ,Virial: 1.01e-01 ,E_tot: 2.08e-02
+[INFO]- | Valid Iters:    36 ,Loss: 1.89e-01 ,Time: 0.169 ,Force: 6.92e-02 ,Virial: 9.88e-02 ,E_tot: 2.08e-02
+[INFO]- | Valid Iters:    37 ,Loss: 1.87e-01 ,Time: 0.179 ,Force: 6.99e-02 ,Virial: 9.67e-02 ,E_tot: 2.09e-02
+[INFO]- | Valid Iters:    38 ,Loss: 1.86e-01 ,Time: 0.173 ,Force: 7.06e-02 ,Virial: 9.46e-02 ,E_tot: 2.09e-02
+[INFO]- | Valid Iters:    39 ,Loss: 1.85e-01 ,Time: 0.172 ,Force: 7.14e-02 ,Virial: 9.26e-02 ,E_tot: 2.09e-02
+[INFO]- | Valid Iters:    40 ,Loss: 1.83e-01 ,Time: 0.172 ,Force: 7.22e-02 ,Virial: 9.03e-02 ,E_tot: 2.10e-02
+[INFO]- | Valid Iters:    41 ,Loss: 1.82e-01 ,Time: 0.176 ,Force: 7.30e-02 ,Virial: 8.84e-02 ,E_tot: 2.10e-02
+[INFO]- | Valid Iters:    42 ,Loss: 1.81e-01 ,Time: 0.172 ,Force: 7.39e-02 ,Virial: 8.61e-02 ,E_tot: 2.10e-02
+[INFO]- | Valid Iters:    43 ,Loss: 1.80e-01 ,Time: 0.176 ,Force: 7.48e-02 ,Virial: 8.43e-02 ,E_tot: 2.11e-02
+[INFO]- | Valid Iters:    44 ,Loss: 1.79e-01 ,Time: 0.172 ,Force: 7.57e-02 ,Virial: 8.20e-02 ,E_tot: 2.11e-02
+[INFO]- | Valid Iters:    45 ,Loss: 1.78e-01 ,Time: 0.168 ,Force: 7.67e-02 ,Virial: 8.02e-02 ,E_tot: 2.12e-02
+[INFO]- | Valid Iters:    46 ,Loss: 1.77e-01 ,Time: 0.168 ,Force: 7.76e-02 ,Virial: 7.77e-02 ,E_tot: 2.12e-02
+[INFO]- | Valid Iters:    47 ,Loss: 1.76e-01 ,Time: 0.172 ,Force: 7.86e-02 ,Virial: 7.61e-02 ,E_tot: 2.12e-02
+[INFO]- | Valid Iters:    48 ,Loss: 1.74e-01 ,Time: 0.169 ,Force: 7.97e-02 ,Virial: 7.35e-02 ,E_tot: 2.12e-02
+[INFO]- | Valid Iters:    49 ,Loss: 1.74e-01 ,Time: 0.176 ,Force: 8.06e-02 ,Virial: 7.19e-02 ,E_tot: 2.13e-02
+[INFO]- | Valid Iters:    50 ,Loss: 1.72e-01 ,Time: 0.184 ,Force: 8.16e-02 ,Virial: 6.93e-02 ,E_tot: 2.13e-02
+[INFO]- | Valid Iters:    51 ,Loss: 1.72e-01 ,Time: 0.172 ,Force: 8.25e-02 ,Virial: 6.80e-02 ,E_tot: 2.13e-02
+[INFO]- | Valid Iters:    52 ,Loss: 1.70e-01 ,Time: 0.172 ,Force: 8.34e-02 ,Virial: 6.51e-02 ,E_tot: 2.13e-02
+[INFO]- | Valid Iters:    53 ,Loss: 1.70e-01 ,Time: 0.174 ,Force: 8.42e-02 ,Virial: 6.40e-02 ,E_tot: 2.14e-02
+[INFO]- | Valid Iters:    54 ,Loss: 1.67e-01 ,Time: 0.169 ,Force: 8.50e-02 ,Virial: 6.06e-02 ,E_tot: 2.14e-02
+[INFO]- | Valid Iters:    55 ,Loss: 1.67e-01 ,Time: 0.170 ,Force: 8.57e-02 ,Virial: 5.97e-02 ,E_tot: 2.14e-02
+[INFO]- | Valid Iters:    56 ,Loss: 1.64e-01 ,Time: 0.172 ,Force: 8.63e-02 ,Virial: 5.64e-02 ,E_tot: 2.14e-02
+[INFO]- | Valid Iters:    57 ,Loss: 1.63e-01 ,Time: 0.170 ,Force: 8.68e-02 ,Virial: 5.53e-02 ,E_tot: 2.14e-02
+[INFO]- | Valid Iters:    58 ,Loss: 1.61e-01 ,Time: 0.176 ,Force: 8.72e-02 ,Virial: 5.24e-02 ,E_tot: 2.14e-02
+[INFO]- | Valid Iters:    59 ,Loss: 1.59e-01 ,Time: 0.174 ,Force: 8.74e-02 ,Virial: 5.04e-02 ,E_tot: 2.14e-02
+[INFO]- | Valid Iters:    60 ,Loss: 1.57e-01 ,Time: 0.173 ,Force: 8.76e-02 ,Virial: 4.81e-02 ,E_tot: 2.13e-02
+[INFO]- | Valid Iters:    61 ,Loss: 1.55e-01 ,Time: 0.166 ,Force: 8.76e-02 ,Virial: 4.62e-02 ,E_tot: 2.13e-02
+[INFO]- | Valid Iters:    62 ,Loss: 1.53e-01 ,Time: 0.207 ,Force: 8.75e-02 ,Virial: 4.38e-02 ,E_tot: 2.13e-02
+[INFO]- | Valid Iters:    63 ,Loss: 1.50e-01 ,Time: 0.210 ,Force: 8.73e-02 ,Virial: 4.19e-02 ,E_tot: 2.13e-02
+[INFO]- | Valid Iters:    64 ,Loss: 1.48e-01 ,Time: 0.171 ,Force: 8.71e-02 ,Virial: 3.95e-02 ,E_tot: 2.12e-02
+[INFO]- | Valid Iters:    65 ,Loss: 1.46e-01 ,Time: 0.170 ,Force: 8.67e-02 ,Virial: 3.79e-02 ,E_tot: 2.12e-02
+[INFO]- | Valid Iters:    66 ,Loss: 1.43e-01 ,Time: 0.169 ,Force: 8.63e-02 ,Virial: 3.53e-02 ,E_tot: 2.12e-02
+[INFO]- | Valid Iters:    67 ,Loss: 1.41e-01 ,Time: 0.166 ,Force: 8.57e-02 ,Virial: 3.37e-02 ,E_tot: 2.11e-02
+[INFO]- | Valid Iters:    68 ,Loss: 1.37e-01 ,Time: 0.166 ,Force: 8.51e-02 ,Virial: 3.13e-02 ,E_tot: 2.11e-02
+[INFO]- | Valid Iters:    69 ,Loss: 1.35e-01 ,Time: 0.159 ,Force: 8.45e-02 ,Virial: 2.97e-02 ,E_tot: 2.10e-02
+[INFO]- | Valid Iters:    70 ,Loss: 1.33e-01 ,Time: 0.169 ,Force: 8.38e-02 ,Virial: 2.78e-02 ,E_tot: 2.10e-02
+[INFO]- | Valid Iters:    71 ,Loss: 1.30e-01 ,Time: 0.166 ,Force: 8.31e-02 ,Virial: 2.61e-02 ,E_tot: 2.09e-02
+[INFO]- | Valid Iters:    72 ,Loss: 1.28e-01 ,Time: 0.165 ,Force: 8.24e-02 ,Virial: 2.44e-02 ,E_tot: 2.09e-02
+[INFO]- | Valid Iters:    73 ,Loss: 1.26e-01 ,Time: 0.169 ,Force: 8.17e-02 ,Virial: 2.32e-02 ,E_tot: 2.08e-02
+[INFO]- | Valid Iters:    74 ,Loss: 1.24e-01 ,Time: 0.169 ,Force: 8.11e-02 ,Virial: 2.19e-02 ,E_tot: 2.08e-02
+[INFO]- | Valid Iters:    75 ,Loss: 1.22e-01 ,Time: 0.165 ,Force: 8.05e-02 ,Virial: 2.09e-02 ,E_tot: 2.07e-02
+[INFO]- | Valid Iters:    76 ,Loss: 1.21e-01 ,Time: 0.163 ,Force: 8.00e-02 ,Virial: 2.00e-02 ,E_tot: 2.07e-02
+[INFO]- | Valid Iters:    77 ,Loss: 1.20e-01 ,Time: 0.169 ,Force: 7.95e-02 ,Virial: 1.94e-02 ,E_tot: 2.06e-02
+[INFO]- | Valid Iters:    78 ,Loss: 1.19e-01 ,Time: 0.171 ,Force: 7.90e-02 ,Virial: 1.91e-02 ,E_tot: 2.06e-02
+[INFO]- | Valid Iters:    79 ,Loss: 1.18e-01 ,Time: 0.169 ,Force: 7.86e-02 ,Virial: 1.91e-02 ,E_tot: 2.05e-02
+[INFO]- | Valid Iters:    80 ,Loss: 1.18e-01 ,Time: 0.172 ,Force: 7.83e-02 ,Virial: 1.93e-02 ,E_tot: 2.05e-02
+[INFO]- | Valid Iters:    81 ,Loss: 1.18e-01 ,Time: 0.165 ,Force: 7.80e-02 ,Virial: 1.98e-02 ,E_tot: 2.05e-02
+[INFO]- | Valid Iters:    82 ,Loss: 1.19e-01 ,Time: 0.166 ,Force: 7.78e-02 ,Virial: 2.05e-02 ,E_tot: 2.04e-02
+[INFO]- | Valid Iters:    83 ,Loss: 1.20e-01 ,Time: 0.166 ,Force: 7.77e-02 ,Virial: 2.14e-02 ,E_tot: 2.04e-02
+[INFO]- | Valid Iters:    84 ,Loss: 1.21e-01 ,Time: 0.176 ,Force: 7.77e-02 ,Virial: 2.25e-02 ,E_tot: 2.04e-02
+[INFO]- | Valid Iters:    85 ,Loss: 1.22e-01 ,Time: 0.168 ,Force: 7.77e-02 ,Virial: 2.37e-02 ,E_tot: 2.03e-02
+[INFO]- | Valid Iters:    86 ,Loss: 1.23e-01 ,Time: 0.164 ,Force: 7.78e-02 ,Virial: 2.50e-02 ,E_tot: 2.03e-02
+[INFO]- | Valid Iters:    87 ,Loss: 1.25e-01 ,Time: 0.161 ,Force: 7.80e-02 ,Virial: 2.64e-02 ,E_tot: 2.03e-02
+[INFO]- | Valid Iters:    88 ,Loss: 1.26e-01 ,Time: 0.169 ,Force: 7.83e-02 ,Virial: 2.79e-02 ,E_tot: 2.03e-02
+[INFO]- | Valid Iters:    89 ,Loss: 1.28e-01 ,Time: 0.162 ,Force: 7.87e-02 ,Virial: 2.94e-02 ,E_tot: 2.03e-02
+[INFO]- | Valid Iters:    90 ,Loss: 1.30e-01 ,Time: 0.161 ,Force: 7.91e-02 ,Virial: 3.10e-02 ,E_tot: 2.03e-02
+[INFO]- | Valid Iters:    91 ,Loss: 1.33e-01 ,Time: 0.166 ,Force: 7.97e-02 ,Virial: 3.25e-02 ,E_tot: 2.03e-02
+[INFO]- | Valid Iters:    92 ,Loss: 1.35e-01 ,Time: 0.164 ,Force: 8.03e-02 ,Virial: 3.43e-02 ,E_tot: 2.03e-02
+[INFO]- | Valid Iters:    93 ,Loss: 1.37e-01 ,Time: 0.160 ,Force: 8.10e-02 ,Virial: 3.59e-02 ,E_tot: 2.03e-02
+[INFO]- | Valid Iters:    94 ,Loss: 1.39e-01 ,Time: 0.164 ,Force: 8.17e-02 ,Virial: 3.74e-02 ,E_tot: 2.03e-02
+[INFO]- | Valid Iters:    95 ,Loss: 1.42e-01 ,Time: 0.164 ,Force: 8.26e-02 ,Virial: 3.91e-02 ,E_tot: 2.03e-02
+[INFO]- | Valid Iters:    96 ,Loss: 1.44e-01 ,Time: 0.170 ,Force: 8.35e-02 ,Virial: 4.06e-02 ,E_tot: 2.04e-02
+[INFO]- | Valid Iters:    97 ,Loss: 1.47e-01 ,Time: 0.165 ,Force: 8.44e-02 ,Virial: 4.22e-02 ,E_tot: 2.04e-02
+[INFO]- | Valid Iters:    98 ,Loss: 1.50e-01 ,Time: 0.165 ,Force: 8.54e-02 ,Virial: 4.37e-02 ,E_tot: 2.04e-02
+[INFO]- | Valid Iters:    99 ,Loss: 1.52e-01 ,Time: 0.164 ,Force: 8.65e-02 ,Virial: 4.53e-02 ,E_tot: 2.04e-02
+[INFO]- | Valid Iters:   100 ,Loss: 1.55e-01 ,Time: 0.162 ,Force: 8.75e-02 ,Virial: 4.67e-02 ,E_tot: 2.04e-02
+[INFO]- | Valid Information: Loss: 1.71e-01 ,Time: 17.725 ,Force: 7.51e-02 ,Virial: 7.54e-02 ,E_tot: 2.08e-02
 [INFO]- +------------------------------------------ End Loop ------------------------------------------+
-[INFO]- | Total training time:    8.40s, total training iters:       2
+[INFO]- | Total training time:   57.04s, total training iters:     100
 [INFO]- ######################################## --End  Train-- ########################################
