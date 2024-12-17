@@ -18,7 +18,7 @@ def adjust_lr(Lr_param: LrSet, iters_step: int):
 def calc_lr_param(Lr_param: LrSet, epoch: int, train_iters: int, logger_name: str = None):
     total_batches = epoch * train_iters
     if Lr_param.decay_rate is None:
-        Lr_param.decay_rate = (Lr_param.limit_lr / Lr_param.start_lr) ** int(Lr_param.decay_step / total_batches)
+        Lr_param.decay_rate = (Lr_param.limit_lr / Lr_param.start_lr) ** (Lr_param.decay_step / total_batches)
         if logger_name is not None:
             logger = Logger(logger_name).logger
             logger.info(f'start learn rate: {Lr_param.start_lr}, limit learn rate:{Lr_param.limit_lr}, '
