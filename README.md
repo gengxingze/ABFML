@@ -1,4 +1,3 @@
-from sympy.physics.units import forcefrom sympy.physics.units import energy___
 # ABFML 
 
 ## 1. Introduction
