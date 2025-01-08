@@ -91,7 +91,7 @@ To run an example using ABFML, follow these steps:
    conda activate abfml
 
 # 2. Navigate to the example directory:
-   cd abfml/example/dp-model
+   cd ABFML/example/DP-sea
   
 # 3. Quick check for model correctness
    abfml check -m model.pt -d float32
