@@ -2,11 +2,6 @@ import time
 import torch
 import torch.nn as nn
 from typing import List, Optional, Dict, Tuple, Any
-
-from pyexpat import features
-
-from sympy.solvers.diophantine.diophantine import length
-
 from abfml.model.math_fun import smooth_fun
 from abfml.model.network import FittingNet, AtomFitNet
 from abfml.model.method import FieldModel
