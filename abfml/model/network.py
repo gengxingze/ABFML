@@ -1,6 +1,6 @@
 import torch
 import torch.nn as nn
-from typing import List
+from typing import List, Tuple
 from abfml.model.math_fun import ActivationModule
 
 
@@ -110,3 +110,83 @@ class FittingNet(nn.Module):
                 else:
                     x = hidden
         return x
+
+
+class Dense(nn.Module):
+    def __init__(self, num_channels: int, in_features: int, out_features: int, bias: bool = True, activate: str = 'tanh', residual: bool = False) -> None:
+        super().__init__()
+        self.num_channels = num_channels
+        self.in_features = in_features
+        self.out_features = out_features
+        self.weight = nn.Parameter(torch.Tensor(num_channels, out_features, in_features))
+        if bias:
+            self.bias = nn.Parameter(torch.Tensor(num_channels, out_features))
+        else:
+            self.register_parameter('bias', None)
+        self.activation = ActivationModule(activation_name=activate)
+        self.residual = residual
+        self.reset_parameters()
+
+    def reset_parameters(self) -> None:
+        for w in self.weight:
+            nn.init.kaiming_uniform_(w, a=5**0.5)
+        if self.bias is not None:
+            for b, w in zip(self.bias, self.weight):
+                fan_in, _ = nn.init._calculate_fan_in_and_fan_out(w)
+                bound = 1 / (fan_in ** 0.5)
+                nn.init.uniform_(b, -bound, bound)
+
+    def forward(self, xx: Tuple[torch.Tensor, torch.Tensor]) -> Tuple[torch.Tensor, torch.Tensor]:
+        x, channels = xx
+        weight: torch.Tensor = self.weight[channels]
+        output: torch.Tensor = torch.bmm(x.transpose(0, 1), weight.transpose(1, 2)).transpose(0, 1)
+
+        if self.bias is not None:
+            bias = self.bias[channels]
+            output = output + bias
+
+        output = self.activation(output)
+
+        if self.residual:
+            if output.shape[2] == x.shape[2]:
+                output = output + x
+            elif output.shape[2] == x.shape[2] * 2:
+                output = output + torch.cat([x, x], dim=2)
+            else:
+                raise NotImplementedError("Not implemented")
+
+        return output, channels
+
+
+class Sequential(nn.Sequential):
+    def forward(self, xx: Tuple[torch.Tensor, torch.Tensor]) -> Tuple[torch.Tensor, torch.Tensor]:
+        for module in self:
+            xx = module(xx)
+        return xx
+
+
+class AtomFitNet(nn.Module):
+    def __init__(self,
+                 num_channels: int,
+                 network_size: List[int],
+                 activate: str,
+                 bias: bool,
+                 resnet_dt: bool):
+        super(AtomFitNet, self).__init__()
+
+        self.bias = bias
+        self.resnet_dt = resnet_dt
+
+        layers = []
+        for i in range(len(network_size) - 1):
+            layers.append(Dense(num_channels=num_channels, in_features=network_size[i], out_features=network_size[i+1],
+                                bias=bias, activate=activate, residual=resnet_dt)) # iterating through the neurons
+
+        self.fitting_net = Sequential(*layers)
+
+    def forward(self, x: torch.Tensor, channels: torch.Tensor) -> torch.Tensor:
+
+        xx: Tuple[torch.Tensor, torch.Tensor] = (x, channels[0])
+        output, _ = self.fitting_net(xx)
+        return output
+

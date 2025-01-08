@@ -48,7 +48,7 @@ class FieldModel(nn.Module, ABC):
         Force, Virial, virial = compute_forces_and_virial(dE_Rid=dE_Rid,
                                                           Rij=Rij, Nij=Nij,
                                                           n_ghost=n_ghost, dtype=dtype, device=device)
-        # print(Etot, Force)
+        # print(Etot, Force, Rij[0,0,:10])
         return Etot, Ei, Force, Virial, virial
 
     @abstractmethod
