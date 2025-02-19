@@ -115,4 +115,6 @@ energy = structure.get_potential_energy()
 force = structure.get_forces()
 ```
 ## Cite
-Xingze Geng, Jianing Gu, Gaowu Qin, Lin-Wang Wang, Xiangying Meng; ABFML: A problem-oriented package for rapidly creating, screening, and optimizing new machine learning force fields. J. Chem. Phys. 7 February 2025; 162 (5): 052502. https://doi.org/10.1063/5.0247559
+If you use ABFML in your research, please cite the following paper:
+
+1. Xingze Geng, Jianing Gu, Gaowu Qin, Lin-Wang Wang, Xiangying Meng; ABFML: A problem-oriented package for rapidly creating, screening, and optimizing new machine learning force fields. J. Chem. Phys. 7 February 2025; 162 (5): 052502. https://doi.org/10.1063/5.0247559
