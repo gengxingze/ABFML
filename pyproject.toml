@@ -1,0 +1,43 @@
+[build-system]
+requires = ["setuptools", "wheel", "torch"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "abfml"
+version = "2025.02.20"
+description = "A problem-oriented package for rapidly creating, screening, and optimizing new machine learning force fields"
+authors = [
+    { name = "GengXingZe", email = "1308186024@qq.com" }
+]
+readme = "README.md"
+license = { file = "LICENSE" }
+keywords = ["machine learning", "force fields", "LAMMPS", "MLFF"]
+requires-python = ">=3.11"
+dependencies = [
+    "ase==3.22.0",
+    "numpy==1.25.0",
+    "matplotlib==3.9.2",
+    "torch>=2.2.1",
+    "jsonschema==4.23.0"
+]
+
+[project.scripts]
+abfml = "abfml.main:main"
+
+[tool.setuptools]
+packages = [
+    "abfml",
+    "abfml.data",
+    "abfml.entrypoints",
+    "abfml.logger",
+    "abfml.loss",
+    "abfml.model",
+    "abfml.optimizer",
+    "abfml.param",
+    "abfml.train",
+    "abfml.utils"
+]
+
+[project.urls]
+Homepage = "https://github.com/gengxingze/ABFML/"
+Repository = "https://github.com/gengxingze/ABFML/"

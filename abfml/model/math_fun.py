@@ -141,7 +141,7 @@ def compute_forces_and_virial(dE_Rid: torch.Tensor,
 
     # Compute relative positions (rxyz) and virial contributions (virial_ij)
     rxyz = Rij[:, :, :, 1:]
-    virial_ij = -1.0 * torch.matmul(rxyz.unsqueeze(-1), dE_Rid.unsqueeze(-2)).reshape(batch, n_atoms, max_neighbor, 9)
+    virial_ij = torch.matmul(rxyz.unsqueeze(-1), dE_Rid.unsqueeze(-2)).reshape(batch, n_atoms, max_neighbor, 9)
 
     # Here only the action force F_ij = -1 * sum(de_ij * dr_ij) is considered, and the reaction force
     # -F_ji = sum(de_ji * dr_ji) should also be considered and subtracted from.
