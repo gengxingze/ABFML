@@ -11,7 +11,7 @@ authors = [
 ]
 readme = "README.md"
 license = {file = "LICENSE"}
-keywords = ["machine learning", "force fields", "LAMMPS", "MLFF"]
+keywords = ["machine learning", "force fields", "LAMMPS", "MLFF", "abfml"]
 requires-python = ">=3.11"
 dependencies = [
     "ase==3.22.0",
