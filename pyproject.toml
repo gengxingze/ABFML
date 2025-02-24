@@ -4,13 +4,13 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "abfml"
-version = "2025.02.20"
+version = "2025.02.24"
 description = "A problem-oriented package for rapidly creating, screening, and optimizing new machine learning force fields"
 authors = [
     { name = "GengXingZe", email = "1308186024@qq.com" }
 ]
 readme = "README.md"
-license = { file = "LICENSE" }
+license = {file = "LICENSE"}
 keywords = ["machine learning", "force fields", "LAMMPS", "MLFF"]
 requires-python = ">=3.11"
 dependencies = [
