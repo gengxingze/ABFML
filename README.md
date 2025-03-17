@@ -17,13 +17,16 @@ To get started with ABFML, follow these steps to set up the environment and inst
 
 # 3. Install PyTorch:
    conda install pytorch
-
-# 4. Download ABFML and Navigate to the ABFML directory:
+# 4. Install abfml:
+#   Option 1: Install from source (local directory). Download ABFML and Navigate to the ABFML directory. 
    cd path/ABFML
-
-# 5. Install ABFML:
    pip install .
-#   This installs ABFML from the local directory.
+#   This installs ABFML from the local source directory.
+
+#   Option 2: Install from PyPI
+   pip install abfml
+#   This installs ABFML directly from the Python Package Index (PyPI).
+
 ```
 ### 2.2 Installing ABFML-LAMMPS
 In general for force field development users, this step can be skipped for now.
