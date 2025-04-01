@@ -60,7 +60,7 @@ def main_parser() -> argparse.ArgumentParser:
         epilog=textwrap.dedent(
             """\
         examples:
-            abfml valid -m model.pt -s /path/to/system -n 30
+            abfml valid -m model.pt -f /path/to/system -n 30
         """
         ),
     )

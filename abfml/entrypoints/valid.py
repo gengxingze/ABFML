@@ -96,66 +96,14 @@ def valid_mlff(
             # Save metrics data for later use
             indicators.append((predict_key, rmse, mse, mae, r2))
 
-            # Plot scatter plot (DFT vs Predict)
             if plot:
-                from scipy.stats import gaussian_kde
-                import matplotlib.pyplot as plt
-                plt.rcParams.update({'font.size': 18, 'font.family': 'serif', 'font.serif': ['Times New Roman']})
-                plt.rcParams['mathtext.default'] = 'regular'
-                plt.figure(figsize=(10, 8))  # Increase image size
-                plt.scatter(dft, predict, s=20, label='data')  # Enhance scatter plot effect
-
-                # Diagonal line (y = x, ideal fit line)
-                data_min = min(dft.min(), predict.min())
-                data_max = max(dft.max(), predict.max())
-                plt.plot([data_min, data_max], [data_min, data_max], color='black', linestyle='--', linewidth=1.5,
-                         label='$y=x$')
-
-                # Annotate RMSE and R² values
-                plt.text(0.05, 0.95, f"RMSE: {rmse:4.4f}{unit[predict_key]}\nR²: {r2:4.4f}", transform=plt.gca().transAxes,
-                         fontsize=18, verticalalignment='top', bbox=dict(facecolor='white', alpha=0.8))
-
-                # Set title, axis labels, and grid
-                plt.title(f'{predict_key}: dft vs predict', fontsize=22)
-                plt.xlabel(f'{predict_key}$_{{dft}}$', fontsize=20)
-                plt.ylabel(f'{predict_key}$_{{predict}}$', fontsize=20)
-                plt.xlim(data_min, data_max)
-                plt.ylim(data_min, data_max)
-                plt.tick_params(axis='both', labelsize=18)
-                plt.grid(True, linestyle='--', alpha=0.5)
-                plt.legend()
-
-                # Save scatter plot
-                plt.savefig(f'{predict_key}_scatter.png', dpi=300, bbox_inches='tight')
-                plt.close()
+                # Plot scatter plot (DFT vs Predict)
+                from abfml.utils.chart import plot_scatter
+                plot_scatter(dft, predict, predict_key, rmse, r2, unit[predict_key])
 
                 # Plot error distribution (Difference Histogram + KDE)
-                plt.figure(figsize=(10, 8))
-
-                # Histogram part
-                counts, bins, _ = plt.hist(difference, bins=40, density=True, alpha=0.7, color='#1f77b4',
-                                           edgecolor='black')
-
-                # KDE (Kernel Density Estimation) smoothed density curve
-                kde = gaussian_kde(difference)
-                kde_x = np.linspace(bins.min(), bins.max(), 300)
-                plt.plot(kde_x, kde(kde_x), color='red', linewidth=2, label='Density')
-
-                # Annotate RMSE and R² values
-                plt.text(0.65, 0.95, f"RMSE: {rmse:4.4f}{unit[predict_key]}\nR²: {r2:4.4f}", transform=plt.gca().transAxes,
-                         fontsize=18, verticalalignment='top', bbox=dict(facecolor='white', alpha=0.8))
-
-                # Set title, axis labels, and grid
-                plt.title(f'{predict_key} error distribution', fontsize=22)
-                plt.xlabel('error (dft - predict)', fontsize=20)
-                plt.ylabel('density', fontsize=20)
-                plt.tick_params(axis='both', labelsize=18)
-                plt.grid(True, linestyle='--', alpha=0.5)
-                plt.legend()
-
-                # Save error distribution plot
-                plt.savefig(f'ErrorDistributionOf_{predict_key}.png', dpi=300, bbox_inches='tight')
-                plt.close()
+                from abfml.utils.chart import plot_error_distribution
+                plot_error_distribution(difference, predict_key, rmse, r2, unit[predict_key])
 
                 # Save data (DFT and Predict)
                 np.savetxt(f'{predict_key}.csv', np.column_stack((dft, predict)), header='DFT,Predict', delimiter=',')
