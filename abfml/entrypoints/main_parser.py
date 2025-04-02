@@ -149,7 +149,7 @@ def main_parser() -> argparse.ArgumentParser:
         epilog=textwrap.dedent(
             """\
         examples:
-            mlff compress -i model.pt -o compress_model.pt
+            abfml compress -i model.pt -o compress_model.pt
         """
         ),
     )
