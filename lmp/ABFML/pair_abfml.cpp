@@ -5,7 +5,7 @@
 #include <cmath>
 #include <cstring>
 
-#include "pair_ABFML.h"
+#include "pair_abfml.h"
 
 #include "atom.h"
 #include "comm.h"
@@ -407,7 +407,7 @@ void PairABFML::compute(int eflag, int vflag)
         torch::Tensor neighbor_type_tensor = torch::from_blob(neighbor_type.data(), { 1,nlocal, max_neighbor }, torch::TensorOptions().dtype(torch::kInt)).to(device);
         torch::Tensor image_dR_tensor = torch::from_blob(image_dR.data(), { 1, nlocal, max_neighbor, 4 }, torch::TensorOptions().dtype(torch::kFloat64)).to(device, dtype);
 
-        auto output = model.forward({ image_type_tensor, neighbor_list_tensor, neighbor_type_tensor, image_dR_tensor, nghost }).toTuple();
+        auto output = model.forward({ element_tensor, image_type_tensor, neighbor_list_tensor, neighbor_type_tensor, image_dR_tensor, nghost}).toTuple();
 
         torch::Tensor Etot = output->elements()[0].toTensor().to(torch::kCPU, torch::kFloat64);
         torch::Tensor Ei = output->elements()[1].toTensor().to(torch::kCPU, torch::kFloat64);
