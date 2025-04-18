@@ -15,9 +15,7 @@ To get started with ABFML, follow these steps to set up the environment and inst
    conda activate abfml
 #   This command activates the `abfml` environment, making it the current working environment.
 
-# 3. Install PyTorch:
-   conda install pytorch
-# 4. Install abfml:
+# 3. Install abfml:
 #   Option 1: Install from source (local directory). Download ABFML and Navigate to the ABFML directory. 
    cd path/ABFML
    pip install .
