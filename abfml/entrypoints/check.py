@@ -10,7 +10,7 @@ from torch.utils.data import ConcatDataset
 from abfml.param.param import Param
 from abfml.logger.loggers import Logger, log_logo
 from abfml.data.read_data import ReadData
-from abfml.calculate import ABFML
+from abfml.core.calculate import ABFML
 
 
 def check_mlff(
@@ -39,9 +39,8 @@ def check_mlff(
             train_dataclass = ReadData(filename=param_class.DataSet.train_file,
                                        cutoff=param_class.GlobalSet.cutoff,
                                        neighbor=param_class.GlobalSet.neighbor,
-                                       type_map=param_class.GlobalSet.type_map,
                                        file_format=param_class.DataSet.file_format)
-            train_data = ConcatDataset(train_dataclass.get_mlffdata())
+            train_data = ConcatDataset(train_dataclass.create_dataset())
             normal_class = getattr(module, param_class.user_defined.normal_name)
             normal_model = normal_class(normal_data=train_data, param_class=param_class, normal_rate="auto")
             normal_data = normal_model.normal_data

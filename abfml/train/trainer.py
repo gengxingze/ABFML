@@ -1,13 +1,9 @@
 import time
 import torch
-from collections import OrderedDict
-from ase import Atoms
 from abfml.param.param import Param
-from abfml.logger.loggers import AverageMeter, Logger
-from abfml.loss.losser import calculate_weight
-from abfml.optimizer.learn_rate import adjust_lr
-from abfml.data.read_data import ReadData
-import sys
+from abfml.logger.loggers import Logger
+from abfml.core.loss.losser import calculate_weight, register_loss_meters
+from abfml.core.optimizer.learn_rate import adjust_lr
 
 
 def train_loop(data_load, model, optimizer, iters_step: int, config: Param):
@@ -16,45 +12,33 @@ def train_loop(data_load, model, optimizer, iters_step: int, config: Param):
     device = next(model.parameters()).device
     batch_size = config.TrainSet.batch_size
     criterion = torch.nn.MSELoss(reduction='sum')
-    predict_name = ["energy",  "atomic_energy", "force", "virial"]
+    predict_name = ["energy",  "atomic_energies", "forces", "virials"]
     # register losses start
-    loss_dict = OrderedDict()
-    loss_dict["loss"] = AverageMeter(name="Loss", fmt=".2e", summary_type="AVERAGE")
-    loss_dict["time"] = AverageMeter(name="Time", fmt="2.3f", summary_type="SUM")
-
-    loss_set = config.LossSet
-    if loss_set.start_energy_weight != 0.0 or loss_set.limit_energy_weight != 0.0:
-        loss_dict["energy"] = AverageMeter(name="E_tot", fmt=".2e", summary_type="AVERAGE")
-    if loss_set.start_ei_weight != 0.0 or loss_set.limit_ei_weight != 0.0:
-        loss_dict["atomic_energy"] = AverageMeter(name="Ei", fmt=".2e", summary_type="AVERAGE")
-    if loss_set.start_force_weight != 0.0 or loss_set.limit_force_weight != 0.0:
-        loss_dict["force"] = AverageMeter(name="Force", fmt=".2e", summary_type="AVERAGE")
-    if loss_set.start_virial_weight != 0.0 or loss_set.limit_virial_weight != 0.0:
-        loss_dict["virial"] = AverageMeter(name="Virial", fmt=".2e", summary_type="AVERAGE")
+    loss_dict = register_loss_meters(loss_set=config.LossSet)
     # register losses end
     weight_dict = {}
     model.train()
     for iters, image_batch in enumerate(data_load):
         time_start = time.time()
 
-        lr_real = adjust_lr(Lr_param=config.LrSet, iters_step=iters_step + iters + 1)
+        lr_real = adjust_lr(lr_param=config.LrSet, iters_step=iters_step + iters + 1)
         for param_group in optimizer.param_groups:
             param_group["lr"] = lr_real
 
-        n_atoms = image_batch["n_atoms"][0].int().to(device)
-        Rij = image_batch["Rij"].to(dtype=dtype, device=device)
-        element_type = image_batch["element_type"][0].int().to(device)
-        Zi = image_batch["Zi"].int().to(device)
-        Nij = image_batch["Nij"].int().to(device)
-        Zij = image_batch["Zij"].int().to(device)
+        n_atoms = image_batch["num_atoms"][0].int().to(device)
+        neighbor_vectors = image_batch["neighbor_vectors"].to(dtype=dtype, device=device)
+        element_types = image_batch["element_types"][0].int().to(device)
+        central_atoms = image_batch["central_atoms"].int().to(device)
+        neighbor_indices = image_batch["neighbor_indices"].int().to(device)
+        neighbor_types = image_batch["neighbor_types"].int().to(device)
 
-        predict_tulp = model(element_type, Zi, Nij, Zij, Rij, 0)
-        Lr_ratio = lr_real / config.LrSet.start_lr
-        weight_tulp = calculate_weight(param=config.LossSet, learn_rate=Lr_ratio)
+        predict_tulp = model(element_types, central_atoms, neighbor_indices, neighbor_types, neighbor_vectors, 0)
+        lr_ratio = lr_real / config.LrSet.start_lr
+        weight_tulp = calculate_weight(param=config.LossSet, learn_rate=lr_ratio)
         weight_dict["energy"] = batch_size * n_atoms ** 2
-        weight_dict["atomic_energy"] = batch_size * n_atoms
-        weight_dict["force"] = batch_size * 3 * n_atoms
-        weight_dict["virial"] = batch_size * 9 * n_atoms ** 2
+        weight_dict["atomic_energies"] = batch_size * n_atoms
+        weight_dict["forces"] = batch_size * 3 * n_atoms
+        weight_dict["virials"] = batch_size * 9 * n_atoms ** 2
 
         loss = torch.tensor([0.0], dtype=dtype, device=device)
         loss_val = torch.tensor([0.0], dtype=dtype, device=device)
@@ -91,35 +75,29 @@ def valid_loop(data_load, model, logger_name: str = 'valid.log', print_freq: int
     device = next(model.parameters()).device
     batch_size = data_load.batch_size
     criterion = torch.nn.MSELoss(reduction='sum')
-    predict_name = ["energy", "atomic_energy", "force", "virial"]
-    predict_data = {"energy": [], "atomic_energy": [], "force": [], "virial": []}
+    predict_name = ["energy", "atomic_energies", "forces", "virials"]
+    predict_data = {"energy": [], "atomic_energies": [], "forces": [], "virials": []}
     # register losses start
-    loss_dict = OrderedDict()
-    loss_dict["loss"] = AverageMeter(name="Loss", fmt=".2e", summary_type="AVERAGE")
-    loss_dict["time"] = AverageMeter(name="Time", fmt="2.3f", summary_type="SUM")
-    loss_dict["energy"] = AverageMeter(name="E_tot", fmt=".2e", summary_type="AVERAGE")
-    loss_dict["atomic_energy"] = AverageMeter(name="Ei", fmt=".2e", summary_type="AVERAGE")
-    loss_dict["force"] = AverageMeter(name="Force", fmt=".2e", summary_type="AVERAGE")
-    loss_dict["virial"] = AverageMeter(name="Virial", fmt=".2e", summary_type="AVERAGE")
+    loss_dict = register_loss_meters()
     # register losses end
     weight_dict = {}
     model.eval()
     common_label = set([])
     for iters, image_batch in enumerate(data_load):
         time_start = time.time()
-        n_atoms = image_batch["n_atoms"][0].int().to(device)
-        Rij = image_batch["Rij"].to(dtype=dtype, device=device)
-        element_type = image_batch["element_type"][0].int().to(device)
-        Zi = image_batch["Zi"].int().to(device)
-        Nij = image_batch["Nij"].int().to(device)
-        Zij = image_batch["Zij"].int().to(device)
+        n_atoms = image_batch["num_atoms"][0].int().to(device)
+        neighbor_vectors = image_batch["neighbor_vectors"].to(dtype=dtype, device=device)
+        element_types = image_batch["element_types"][0].int().to(device)
+        central_atoms = image_batch["central_atoms"].int().to(device)
+        neighbor_indices = image_batch["neighbor_indices"].int().to(device)
+        neighbor_types = image_batch["neighbor_types"].int().to(device)
 
-        predict_tulp = model(element_type, Zi, Nij, Zij, Rij, 0)
+        predict_tulp = model(element_types, central_atoms, neighbor_indices, neighbor_types, neighbor_vectors, 0)
 
         weight_dict["energy"] = batch_size * n_atoms ** 2
-        weight_dict["atomic_energy"] = batch_size * n_atoms
-        weight_dict["force"] = batch_size * 3 * n_atoms
-        weight_dict["virial"] = batch_size * 9 * n_atoms ** 2
+        weight_dict["atomic_energies"] = batch_size * n_atoms
+        weight_dict["forces"] = batch_size * 3 * n_atoms
+        weight_dict["virials"] = batch_size * 9 * n_atoms ** 2
 
         loss_val = torch.tensor([0], dtype=dtype, device=device)
 
@@ -147,14 +125,3 @@ def valid_loop(data_load, model, logger_name: str = 'valid.log', print_freq: int
     logger.info(f"| Valid Information: " +
                 ' ,'.join([loss_dict[label].summary() for label in ["loss", "time"] + list(common_label)]))
     return loss_dict, predict_data
-
-
-def predict(atom: Atoms, model):
-    type_map = model.type_map
-    cutoff = model.cutoff
-    neighbor = model.neighbor
-    information_tulp = ReadData.calculate_neighbor(atom=atom, cutoff=cutoff, neighbor=neighbor, type_map=type_map)
-    element_type, Zi, Nij, Zij, Rij = information_tulp
-    predict_tulp = model(element_type, Zi, Nij, Zij, Rij, 0)
-    Etot, Ei, Force, Virial, virial = predict_tulp
-    return Etot, Ei, Force, Virial, virial

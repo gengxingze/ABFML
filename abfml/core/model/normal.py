@@ -1,8 +1,7 @@
 import torch
-import random
-from typing import List, Tuple, Callable, Dict, Union
+from typing import List, Union
 from abfml.param.param import Param
-from abfml.model.method import NormalModel
+from abfml.core.model.method import NormalModel
 
 
 class DPNormal(NormalModel):
@@ -35,26 +34,26 @@ class DPNormal(NormalModel):
         std_mean: List[torch.Tensor] = [torch.zeros(ntype, 4, requires_grad=False),
                                         torch.zeros(ntype, 4, requires_grad=False)]
         if self.coordinate_matrix == 'a':
-            from abfml.model.field_model_dp import DpSe2a
+            from abfml.core.model.dpse import DpSe2a
             calculate_coordinate_matrix = DpSe2a.calculate_coordinate_matrix
         elif self.coordinate_matrix == 'r':
-            from abfml.model.field_model_dp import DpSe2r
+            from abfml.core.model.dpse import DpSe2r
             calculate_coordinate_matrix = DpSe2r.calculate_coordinate_matrix
         else:
             raise KeyError("Key word of coordinate_matrix have 'a' or 'r'")
 
         for i, image_batch in enumerate(normal_loader):
-            Rij = image_batch["Rij"]
-            Zi = image_batch["Zi"]
-            element_type = image_batch["element_type"][0].to(torch.int64).tolist()
+            neighbor_vectors = image_batch["neighbor_vectors"]
+            central_atoms = image_batch["central_atoms"]
+            element_types = image_batch["element_types"][0].to(torch.int64).tolist()
 
             Ri = calculate_coordinate_matrix(R_min=self.R_min,
                                              R_max=self.R_max,
                                              smooth_type=self.smooth_type,
-                                             Rij=Rij)
+                                             Rij=neighbor_vectors)
             # I think the sample standard deviation should be used instead of the standard deviation
-            for i_type, element in enumerate(element_type):
-                mask = (Zi == element)
+            for i_type, element in enumerate(element_types):
+                mask = (central_atoms == element)
                 s_rij = Ri[:, :, :, 0][mask]
                 s_rij_std, s_rij_mean = torch.std_mean(s_rij)
 
@@ -100,26 +99,27 @@ class FeatureNormal(NormalModel):
         type_num = torch.zeros(ntype)
         std_mean: List[torch.Tensor] = [torch.zeros(ntype,  requires_grad=False),
                                         torch.zeros(ntype, requires_grad=False)]
-        from abfml.model.field_model_bp import BPMlp
+        from abfml.core.model.bpmlp import BPMlp
         for i, image_batch in enumerate(normal_loader):
-            Nij= image_batch['Nij']
-            Zij = image_batch['Zij']
-            Rij = image_batch["Rij"]
-            Zi = image_batch["Zi"]
+            neighbor_vectors = image_batch["neighbor_vectors"]
+            element_types = image_batch["element_types"][0]
+            central_atoms = image_batch["central_atoms"]
+            neighbor_indices = image_batch["neighbor_indices"]
+            neighbor_types = image_batch["neighbor_types"]
 
             element_type = image_batch["element_type"][0].to(torch.int64)
             Gi = BPMlp.calculate_bp_feature(type_map=type_map,
                                             bp_features_information=param_class.BPDescriptor.bp_features_information,
                                             bp_features_param=param_class.BPDescriptor.bp_features_param,
                                             element_map=element_type,
-                                            Nij=Nij,
-                                            Zij=Zij,
-                                            Rij=Rij)
+                                            neighbor_indices=neighbor_indices,
+                                            neighbor_types=neighbor_types,
+                                            neighbor_vectors=neighbor_vectors)
 
             # I think the sample standard deviation should be used instead of the standard deviation
             Gi = Gi.clone().detach()
             for i_type, element in enumerate(element_type):
-                mask = (Zi == element)
+                mask = (central_atoms == element)
                 feature = Gi[mask]
                 feature_std, feature_mean = torch.std_mean(feature)
 

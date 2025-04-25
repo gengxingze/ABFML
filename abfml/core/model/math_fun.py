@@ -108,63 +108,46 @@ def polynomial_fun(fun_name: str, n: int, rij: torch.Tensor, r_inner: float, r_o
 
 
 #@torch.jit.script
-def calculate_distance_grad(Ri: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
-    batch, n_atoms, max_neighbor, _ = Ri.shape
-    device = Ri.device
-    dtype = Ri.dtype
-    dRi = torch.zeros(batch, n_atoms, max_neighbor, 4, 3, dtype=dtype, device=device)
-    rr = torch.zeros(batch, n_atoms, max_neighbor, dtype=dtype, device=device)
-    mask = (Ri[..., 0] > 1e-5)
-    rr[mask] = 1 / Ri[..., 0][mask]
-    dRi[..., 0, 0] = Ri[..., 1] * rr
-    dRi[..., 0, 1] = Ri[..., 2] * rr
-    dRi[..., 0, 2] = Ri[..., 3] * rr
-    dRi[..., 1, 0] = 1
-    dRi[..., 2, 1] = 1
-    dRi[..., 3, 2] = 1
-    return Ri, dRi
+def derive_mechanics(
+    grad_Ei: torch.Tensor,
+    neighbor_vectors: torch.Tensor,
+    neighbor_indices: torch.Tensor,
+    n_ghost: int
+) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+    batch, n_atoms, max_neighbors = neighbor_indices.shape
+    dtype, device = neighbor_vectors.dtype, neighbor_vectors.device
 
+    # Initialize force and per-atom virial tensors
+    force = torch.zeros(batch, n_atoms + n_ghost, 3, dtype=dtype, device=device)
+    force[:, :n_atoms, :] = grad_Ei.sum(dim=-2)  # Direct contribution from central atoms
 
-@torch.jit.script
-def compute_forces_and_virial(dE_Rid: torch.Tensor,
-                              Rij: torch.Tensor,
-                              Nij: torch.Tensor,
-                              n_ghost: int,
-                              dtype: torch.dtype,
-                              device: torch.device) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
-    batch, n_atoms, max_neighbor = Nij.shape
+    atomic_virial = torch.zeros(batch, n_atoms + n_ghost, 9, dtype=dtype, device=device)
 
-    # Initialize Force and Virial tensors
-    Force = torch.zeros(batch, n_atoms + n_ghost, 3, dtype=dtype, device=device)
-    Force[:, :n_atoms, :] = -1.0 * dE_Rid.sum(dim=-2)
-    virial = torch.zeros(batch, n_atoms + n_ghost, 9, dtype=dtype, device=device)
+    # Extract relative position vectors (exclude norm)
+    rel_pos = neighbor_vectors[..., 1:]  # Shape: [batch, n_atoms, max_neighbors, 3]
 
-    # Compute relative positions (rxyz) and virial contributions (virial_ij)
-    rxyz = Rij[:, :, :, 1:]
-    virial_ij = torch.matmul(rxyz.unsqueeze(-1), dE_Rid.unsqueeze(-2)).reshape(batch, n_atoms, max_neighbor, 9)
+    # Compute local virial contributions via outer product of dr and dE
+    local_virials = torch.matmul(rel_pos.unsqueeze(-1), -1 * grad_Ei.unsqueeze(-2)).reshape(batch, n_atoms, max_neighbors, 9)
 
-    # Here only the action force F_ij = -1 * sum(de_ij * dr_ij) is considered, and the reaction force
-    # -F_ji = sum(de_ji * dr_ji) should also be considered and subtracted from.
-    # Finally, F_ij = - 1*sum(de_ij * dr_ij) + sum(de_ji * dr_ji)
-    # for bb in range(0, batch):
-    #     for ii in range(0, n_atoms + n_ghost):
-    #         Force[bb, ii] = Force[bb, ii] + dE_Rid[bb][Nij[bb] == ii].sum(dim=0)
+    # Replace invalid neighbor indices (-1) with 0
+    neighbor_indices[neighbor_indices == -1] = 0
 
-    # Replace invalid neighbor indices with 0
-    Nij[Nij == -1] = 0
+    for b in range(batch):
+        # Flatten indices and contribution values
+        neighbor_idx_b = neighbor_indices[b].view(-1).to(torch.int64)
 
-    # Scatter-add for forces and virial
-    for bb in range(batch):
-        indices_f = Nij[bb].squeeze(dim=0).to(torch.int64).view(-1).unsqueeze(-1).expand(-1, 3)
-        values_f = dE_Rid[bb].squeeze(dim=0).view(-1, 3)
-        Force[bb] = Force[bb].scatter_add(0, indices_f, values_f).reshape(n_atoms + n_ghost, 3)
+        # Force scatter-add
+        force_contrib_b = -1 * grad_Ei[b].view(-1, 3)
+        index_f = neighbor_idx_b.unsqueeze(-1).expand(-1, 3)
+        force[b] = force[b].scatter_add(0, index_f, force_contrib_b)
 
-        indices_v = Nij[bb].squeeze(dim=0).to(torch.int64).view(-1).unsqueeze(-1).expand(-1, 9)
-        values_v = virial_ij[bb].squeeze(dim=0).view(-1, 9)
-        virial[bb] = virial[bb].scatter_add(0, indices_v, values_v).reshape(n_atoms + n_ghost, 9)
+        # Virial scatter-add
+        virial_contrib_b = local_virials[b].view(-1, 9)
+        index_v = neighbor_idx_b.unsqueeze(-1).expand(-1, 9)
+        atomic_virial[b] = atomic_virial[b].scatter_add(0, index_v, virial_contrib_b)
 
-    # Sum Virial tensor contributions
-    Virial = virial.sum(dim=-2)
+    # Compute total virial by summing over all atoms
+    virial = atomic_virial.sum(dim=1)
 
-    return Force, Virial, virial
+    return force, virial, atomic_virial
 

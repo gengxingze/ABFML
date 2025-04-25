@@ -36,7 +36,7 @@ To integrate ABFML with LAMMPS, follow these steps:
 #   Obtain the LAMMPS package suitable for your system from the [LAMMPS website](https://lammps.sandia.gov/). This will be the molecular dynamics engine that ABFML will interact with.
 
 # 2. Download Libtorch:
-#   Libtorch is the PyTorch C++ API.
+#   Libtorch is the PyTorch C++ API. Unless it can be guaranteed that the system is "new" enough, please use the Pre-cxx11 ABI version.
 
 # 3. Copy ABFML files to LAMMPS:  
    cp abfml/lmp/ABFML lammps/src
@@ -106,9 +106,11 @@ To run an example using ABFML, follow these steps:
 ```
 
 Use the ASE calculator to perform quick calculations on the model created.
+
 ```python
-from abfml.calculate import ABFML
+from abfml.core.calculate import ABFML
 from ase.build import bulk
+
 calc = ABFML('model.pt')
 structure = bulk('Cu', a=3.62)
 structure.calc = calc

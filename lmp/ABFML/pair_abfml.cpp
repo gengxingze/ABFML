@@ -135,106 +135,82 @@ int PairABFML::get_node_rank() {
    global settings pair_style
 ------------------------------------------------------------------------- */
 
-void PairABFML::settings(int narg, char** arg)
-{
+void PairABFML::settings(int narg, char** arg) {
     if (narg <= 0) error->all(FLERR, "Illegal pair_style command");
+
     std::vector<std::string> arg_vector;
+    int iarg = 0;
+    while (iarg < narg && !is_key(arg[iarg])) ++iarg;
 
-    int iarg;
-    while (iarg < narg) {
-        if (is_key(arg[iarg])) {
-            break;
-        }
-        iarg++;
-    }
-
-    for (int ii = 0; ii < iarg; ++ii) {
-        arg_vector.push_back(arg[ii]);
-    }
+    for (int ii = 0; ii < iarg; ++ii) arg_vector.push_back(arg[ii]);
 
     if (arg_vector.size() == 1) {
-        try
-        {
+        try {
             std::string model_file = arg_vector[0];
             torch::jit::getExecutorMode() = false;
             model = torch::jit::load(model_file);
-            if (torch::cuda::is_available()) { device = torch::Device(torch::kCUDA, get_node_rank());}
-            if (true) { dtype = torch::kFloat32; }
+            if (torch::cuda::is_available()) device = torch::Device(torch::kCUDA, get_node_rank());
+            dtype = torch::kFloat64;
             model.to(dtype);
             model.to(device);
             model.eval();
-            if (comm->me == 0)
-            {
-                utils::logmesg(lmp, "Load model successful !----> %s", model_file);
+            if (comm->me == 0) {
+                utils::logmesg(lmp, "Load model successful!----> %s", model_file);
                 utils::logmesg(lmp, "INFO IN ABFML-MODEL---->>");
             }
-
-        }
-        catch (const c10::Error e)
-        {
-            std::cerr << "Failed to load model!" << e.msg() << std::endl;
+        } catch (const c10::Error& e) {
+            std::cerr << "Failed to load TorchScript model: " << e.msg() << std::endl;
         }
     }
-
 }
 
 /* ----------------------------------------------------------------------
    set coeffs for one or more type pairs pair_coeff
 ------------------------------------------------------------------------- */
 
-void PairABFML::coeff(int narg, char** arg)
-{
-    int ntype = atom->ntypes;
-    if (!allocated) { allocate(); }
+void PairABFML::coeff(int narg, char** arg) {
+    if (!allocated) allocate();
 
-    // pair_coeff * * 
     int ilo, ihi, jlo, jhi;
     utils::bounds(FLERR, arg[0], 1, atom->ntypes, ilo, ihi, error);
     utils::bounds(FLERR, arg[1], 1, atom->ntypes, jlo, jhi, error);
 
     int count = 0;
-    for (int i = ilo; i <= ihi; i++) {
-        for (int j = MAX(jlo, i); j <= jhi; j++)
-        {
+    for (int i = ilo; i <= ihi; i++)
+        for (int j = std::max(jlo, i); j <= jhi; j++) {
             setflag[i][j] = 1;
             count++;
         }
-    }
+
     cutoff = model.attr("cutoff").toDouble();
-    std::vector<int64_t> neighbor_model = model.attr("neighbor").toIntVector();
+    auto neighbor_model = model.attr("neighbor").toIntVector();
     auto type_map_model = model.attr("type_map").toList();
-    if (ntype > narg - 2)
-    {
-        error->all(FLERR, "Element mapping not fully set");
-    }
+
+    if (atom->ntypes > narg - 2) error->all(FLERR, "Element mapping not set");
+
     for (int ii = 2; ii < narg; ++ii) {
         int temp = std::stoi(arg[ii]);
         auto iter = std::find(type_map_model.begin(), type_map_model.end(), temp);
-        if (iter != type_map_model.end() || arg[ii] == 0)
-        {
+        if (iter != type_map_model.end()) {
             type_map.push_back(temp);
-        }
-        else
-        {
+        } else {
             error->all(FLERR, "This element is not included in the machine learning force field");
         }
     }
-    if (neighbor_model.size() == 1)
-    {
+
+    if (neighbor_model.size() == 1) {
         max_neighbor = neighbor_model[0];
-    }
-    else
-    {
+    } else {
         std::vector<int> type_map_temp = type_map;
         std::sort(type_map_temp.begin(), type_map_temp.end());
-        for (int ii = 0; ii < type_map.size(); ii++)
-        {
-            neighbor_map.push_back(neighbor_model[std::find(type_map_model.begin(), type_map_model.end(), type_map_temp[ii]) - type_map_model.begin()]);
+        for (int ii = 0; ii < type_map.size(); ii++) {
+            int idx = std::find(type_map_model.begin(), type_map_model.end(), type_map_temp[ii]) - type_map_model.begin();
+            neighbor_map.push_back(neighbor_model[idx]);
             max_neighbor += neighbor_map[ii];
             neighbor_width.push_back(max_neighbor);
         }
     }
-    
+
     if (count == 0) error->all(FLERR, "Incorrect args for pair coefficients");
 }
 
@@ -257,20 +233,19 @@ void PairABFML::init_style()
 /* ---------------------------------------------------------------------- */
 
 
-void PairABFML::calculate_neighbor()
+void PairABFML::reform_neighbor()
 {
     double** x = atom->x;
     int* type = atom->type;
     int nlocal = atom->nlocal;
     int n_all = nlocal + atom->nghost;
-    int* ilist, * jlist, * numneigh, ** firstneigh;
-    int inum, jnum, itype, jtype;
+    int* ilist = list->ilist;
+    int* numneigh = list->numneigh;
+    int** firstneigh = list->firstneigh;
+    int inum = list->inum;
+    int* jlist;
+    int jnum, itype, jtype;
     double dx, dy, dz, rsq, rij;
-
-    inum = list->inum;
-    ilist = list->ilist;
-    numneigh = list->numneigh;
-    firstneigh = list->firstneigh;
 
     image_type.clear();
     image_type.resize(nlocal, 0);
@@ -279,7 +254,7 @@ void PairABFML::calculate_neighbor()
     neighbor_list.clear();
     neighbor_list.resize(nlocal * max_neighbor, -1);
     image_dR.clear();
-    image_dR.resize(nlocal * max_neighbor * 4, 0);
+    image_dR.resize(nlocal * max_neighbor * 4, 0.0);
 
 
     std::vector<int> use_type(n_all);
@@ -389,36 +364,37 @@ void PairABFML::compute(int eflag, int vflag)
     double** f = atom->f;
     int newton_pair = force->newton_pair;
     int nlocal = atom->nlocal;
-    int nghost =  nghost = atom->nghost; 
+    int nghost = atom->nghost;
     int n_all = nlocal + nghost;
 
-    auto t2 = std::chrono::high_resolution_clock::now();
     torch::Tensor element_tensor = torch::zeros({ type_map.size() }, torch::kInt);
     for (int i = 0; i < type_map.size(); i++)
     {
         element_tensor[i] = type_map[i];
     }
-    calculate_neighbor();
+    reform_neighbor();
     if (nlocal > 0)
     {
-
-        torch::Tensor image_type_tensor = torch::from_blob(image_type.data(), { 1,nlocal }, torch::TensorOptions().dtype(torch::kInt)).to(device);
-        torch::Tensor neighbor_list_tensor = torch::from_blob(neighbor_list.data(), { 1,nlocal, max_neighbor }, torch::TensorOptions().dtype(torch::kInt)).to(device);
-        torch::Tensor neighbor_type_tensor = torch::from_blob(neighbor_type.data(), { 1,nlocal, max_neighbor }, torch::TensorOptions().dtype(torch::kInt)).to(device);
-        torch::Tensor image_dR_tensor = torch::from_blob(image_dR.data(), { 1, nlocal, max_neighbor, 4 }, torch::TensorOptions().dtype(torch::kFloat64)).to(device, dtype);
+        // set TensorOptions
+        const auto opts_int = torch::TensorOptions().dtype(torch::kInt);
+        const auto opts_float = torch::TensorOptions().dtype(torch::kFloat64);
+        torch::Tensor image_type_tensor = torch::from_blob(image_type.data(), { 1,nlocal }, opts_int).to(device);
+        torch::Tensor neighbor_list_tensor = torch::from_blob(neighbor_list.data(), { 1,nlocal, max_neighbor }, opts_int).to(device);
+        torch::Tensor neighbor_type_tensor = torch::from_blob(neighbor_type.data(), { 1,nlocal, max_neighbor }, opts_int).to(device);
+        torch::Tensor image_dR_tensor = torch::from_blob(image_dR.data(), { 1, nlocal, max_neighbor, 4 }, opts_float).to(device, dtype);
 
         auto output = model.forward({ element_tensor, image_type_tensor, neighbor_list_tensor, neighbor_type_tensor, image_dR_tensor, nghost}).toTuple();
 
         torch::Tensor Etot = output->elements()[0].toTensor().to(torch::kCPU, torch::kFloat64);
         torch::Tensor Ei = output->elements()[1].toTensor().to(torch::kCPU, torch::kFloat64);
         torch::Tensor Force = output->elements()[2].toTensor().to(torch::kCPU, torch::kFloat64);
-        torch::Tensor Virial = output->elements()[3].toTensor().to(torch::kCPU, torch::kFloat64);
-        torch::Tensor Virial_atoms = output->elements()[4].toTensor().to(torch::kCPU, torch::kFloat64);
+        torch::Tensor virial_model = output->elements()[3].toTensor().to(torch::kCPU, torch::kFloat64);
+        torch::Tensor virial_atoms = output->elements()[4].toTensor().to(torch::kCPU, torch::kFloat64);
         // get force
         auto force_ptr = Force.accessor<double, 3>();
         auto Ei_ptr = Ei.accessor <double, 3>();
-        auto virial_ptr = Virial.accessor<double, 2>();
-        auto virial_atoms_ptr = Virial_atoms.accessor<double, 3>();
+        auto virial_ptr = virial_model.accessor<double, 2>();
+        auto virial_atoms_ptr = virial_atoms.accessor<double, 3>();
 
 
         for (int i = 0; i < n_all; i++)

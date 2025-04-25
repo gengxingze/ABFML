@@ -1,8 +1,7 @@
-import time
 import torch
 import torch.nn as nn
-from abfml.model.method import FieldModel, NormalModel
-from typing import List, Tuple, Callable, Dict, Union, Any, Optional
+from abfml.core.model.method import FieldModel, NormalModel
+from typing import List, Tuple, Dict, Union, Any, Optional
 from abfml.param.param import Param
 
 

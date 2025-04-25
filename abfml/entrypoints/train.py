@@ -8,13 +8,36 @@ import numpy as np
 from typing import Optional
 from torch.utils.data import ConcatDataset, DataLoader, Subset
 from abfml.param.param import Param
-from abfml.model.normal import DPNormal, FeatureNormal
+from abfml.core.model.normal import DPNormal, FeatureNormal
 from abfml.logger.loggers import Logger, log_data_info, log_logo
 from abfml.data.read_data import ReadData
 from abfml.train.trainer import train_loop, valid_loop
-from abfml.optimizer.optim_init import optim_init
-from abfml.optimizer.learn_rate import calc_lr_param
+from abfml.core.optimizer.optim_init import optim_init
+from abfml.core.optimizer.learn_rate import calc_lr_param
 import torch.multiprocessing
+
+
+def initialize_model(param_class, init_model: Optional[str], logger):
+    # 尝试加载已有模型
+    try:
+        model = torch.jit.load(init_model)
+        logger.info(f"Successfully loaded JIT model from {init_model}")
+    except RuntimeError:
+        try:
+            model = torch.load(init_model, map_location="cpu")
+            logger.info(f"Successfully loaded PyTorch model from {init_model}")
+        except Exception as e:
+            raise RuntimeError(f"Failed to load model using both torch.jit.load and torch.load: {e}")
+
+    # 检查模型基本参数是否匹配
+    if hasattr(model, 'cutoff') and model.cutoff != param_class.GlobalSet.cutoff:
+        raise ValueError(f"Cutoff mismatch: model={model.cutoff}, config={param_class.GlobalSet.cutoff}")
+    if hasattr(model, 'neighbor') and model.neighbor != param_class.GlobalSet.neighbor:
+        raise ValueError(f"Neighbor mismatch: model={model.neighbor}, config={param_class.GlobalSet.neighbor}")
+    if hasattr(model, 'type_map') and param_class.GlobalSet.type_map not in model.type_map:
+        raise ValueError(f"type_map mismatch: config type_map {param_class.GlobalSet.type_map} not in model")
+
+    return model
 
 
 def train_mlff(
@@ -41,28 +64,25 @@ def train_mlff(
         train_dataclass = ReadData(filename=param_class.DataSet.train_file,
                                    cutoff=param_class.GlobalSet.cutoff,
                                    neighbor=param_class.GlobalSet.neighbor,
-                                   type_map=param_class.GlobalSet.type_map,
                                    file_format=param_class.DataSet.file_format)
         log_data_info(logger, train_dataclass)
-        train_data = ConcatDataset(train_dataclass.get_mlffdata())
+        train_data = ConcatDataset(train_dataclass.create_dataset())
 
         logger.info("+-------------------------------------- valid data file ---------------------------------------+")
         valid_dataclass = ReadData(filename=param_class.DataSet.valid_file,
                                    cutoff=param_class.GlobalSet.cutoff,
                                    neighbor=param_class.GlobalSet.neighbor,
-                                   type_map=param_class.GlobalSet.type_map,
                                    file_format=param_class.DataSet.file_format)
         log_data_info(logger, valid_dataclass)
-        valid_data = ConcatDataset(valid_dataclass.get_mlffdata())
+        valid_data = ConcatDataset(valid_dataclass.create_dataset())
     else:
         logger.info("+----------------------------------------- data file -------------------------------------------+")
         total_dataclass = ReadData(filename=param_class.DataSet.train_file,
                                    cutoff=param_class.GlobalSet.cutoff,
                                    neighbor=param_class.GlobalSet.neighbor,
-                                   type_map=param_class.GlobalSet.type_map,
                                    file_format=param_class.DataSet.file_format)
         log_data_info(logger, total_dataclass)
-        total_data = ConcatDataset(total_dataclass.get_mlffdata())
+        total_data = ConcatDataset(total_dataclass.create_dataset())
         total_indices = np.arange(len(total_data))
         if param_class.DataSet.shuffle:
             logger.info(f"| Because of shuffle is set to true, ")
@@ -80,28 +100,7 @@ def train_mlff(
                                  shuffle=False, num_workers=num_worker)
 
     if init_model is not None:
-        # old_model = torch.jit.script(init_model)
-        # if old_model.Rcut != param_class.GlobalSet.cutoff:
-        #     raise Exception("")
-        # if old_model.neighbor != param_class.GlobalSet.neighbor:
-        #     raise Exception("")
-        # if param_class.GlobalSet.type_map in old_model.type():
-        #     raise Exception("")
-        # if param_class.model_name == "deepmd":
-        #     if param_class.deep.name == "se_e2_a":
-        #         from src.model.dp_se_e2_a import DpSe2a
-        #         model = DpSe2a
-        # elif param_class.model_name == "user_defined":
-        #     model_path = os.path.dirname(param_class.UseDefined.model_path)
-        #     sys.path.append(model_path)
-        #     try:
-        #         import user_model
-        #         model = user_model.user_model(param_class.UseDefined.config)
-        #     except:
-        #         raise Exception(f"Undefined deepmd network: {param_class.deep.name}")
-        # else:
-        #     raise Exception(f"If you define your own machine learning force field, use the name: user_defined")
-        pass
+        model = initialize_model(param_class, init_model, logger)
 
     elif restart is not None:
         check_point_class = torch.load(restart)
@@ -109,21 +108,21 @@ def train_mlff(
     else:
         if param_class.model_name in ["dp_se_e2_a", "dp_se_e3", "dp_se_e2_r"]:
             if param_class.model_name == "dp_se_e2_r":
-                from abfml.model.field_model_dp import DpSe2r
+                from abfml.core.model.dpse import DpSe2r
                 energy_shift, std_mean = DPNormal(normal_data=train_data,
                                                   param_class=param_class,
                                                   normal_rate='auto',
                                                   coordinate_matrix='r').normal_data
                 model_class = DpSe2r
             elif param_class.model_name == "dp_se_e2_a":
-                from abfml.model.field_model_dp import DpSe2a
+                from abfml.core.model.dpse import DpSe2a
                 energy_shift, std_mean = DPNormal(normal_data=train_data,
                                                   param_class=param_class,
                                                   normal_rate='auto',
                                                   coordinate_matrix='a').normal_data
                 model_class = DpSe2a
             else:
-                from abfml.model.field_model_dp import DpSe3
+                from abfml.core.model.dpse import DpSe3
                 energy_shift, std_mean = DPNormal(normal_data=train_data,
                                                   param_class=param_class,
                                                   normal_rate='auto',
@@ -139,7 +138,7 @@ def train_mlff(
                                 std_mean=std_mean)
 
         elif param_class.model_name == "BPMlp":
-            from abfml.model.field_model_bp import BPMlp
+            from abfml.core.model.bpmlp import BPMlp
             energy_shift, std_mean = FeatureNormal(normal_data=train_data,
                                                    param_class=param_class,
                                                    normal_rate='auto',
@@ -154,14 +153,14 @@ def train_mlff(
                           std_mean=std_mean)
 
         elif param_class.model_name == "NEP":
-            from abfml.model.field_model_nep import NEP
+            from abfml.core.model.nep import NEP
             model = NEP(type_map=param_class.GlobalSet.type_map,
                         cutoff=param_class.GlobalSet.cutoff,
                         neighbor=param_class.GlobalSet.neighbor,
                         fitting_config=param_class.NEPParam.fitting_config,
                         feature_config=param_class.NEPParam.feature_config,
                         energy_shift=[0,0],
-                        std_mean=[0])
+                        std_mean=[torch.tensor([0.0])])
         elif param_class.model_name == "user_defined":
             field_model_name = param_class.user_defined.field_name
             model_path = param_class.user_defined.model_path
@@ -221,8 +220,8 @@ def train_mlff(
         iters_step = check_point_class["iters_step"]
     else:
         optimizer = optim_init(model=model, param=param_class.TrainSet)
-        calc_lr_param(Lr_param=param_class.LrSet,
-                      epoch=param_class.TrainSet.epoch,
+        calc_lr_param(lr_param=param_class.LrSet,
+                      epochs=param_class.TrainSet.epoch,
                       train_iters=int(len(train_data)/param_class.TrainSet.batch_size),
                       logger_name=param_class.GlobalSet.logger_file)
 

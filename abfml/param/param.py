@@ -626,6 +626,8 @@ class Param:
         validator = DefaultValidatingDraft7Validator(global_set_schema)
         validator.validate(global_dict)
         self.GlobalSet = GlobalSet(**global_dict)
+        if isinstance(self.GlobalSet.neighbor, list):
+            self.GlobalSet.neighbor = {t: n for t, n in zip(self.GlobalSet.type_map, self.GlobalSet.neighbor)}
 
         data_dict = input_dict['data_setting']
         validator = DefaultValidatingDraft7Validator(data_set_schema)

@@ -1,10 +1,9 @@
-import time
 import torch
 import torch.nn as nn
-from typing import List, Optional, Dict, Tuple, Any
-from abfml.model.math_fun import smooth_fun
-from abfml.model.network import FittingNet, AtomFitNet
-from abfml.model.method import FieldModel
+from typing import List, Optional, Dict, Tuple, Any, Union
+from abfml.core.model.math_fun import smooth_fun
+from abfml.core.model.network import FittingNet, AtomFitNet
+from abfml.core.model.method import FieldModel
 
 
 @torch.jit.interface
@@ -17,7 +16,7 @@ class BPMlp(FieldModel):
     def __init__(self,
                  type_map: List[int],
                  cutoff: float,
-                 neighbor: List[int],
+                 neighbor: Union[Dict[int, int], int],
                  fit_config: Dict[str, Any],
                  bp_features_information: List[Tuple[str, int]],
                  bp_features_param: List[Tuple[Dict[str, torch.Tensor], Dict[str, str]]],
@@ -46,27 +45,26 @@ class BPMlp(FieldModel):
 
     def field(self,
               element_map: torch.Tensor,
-              Zi: torch.Tensor,
-              Nij: torch.Tensor,
-              Zij: torch.Tensor,
-              Rij: torch.Tensor,
+              central_atoms: torch.Tensor,
+              neighbor_indices: torch.Tensor,
+              neighbor_types: torch.Tensor,
+              neighbor_vectors: torch.Tensor,
               n_ghost: int):
-        batch, n_atoms, max_neighbor = Nij.shape
-        device = Rij.device
-        dtype = Rij.dtype
+        batch, n_atoms, max_neighbor = neighbor_types.shape
+        device, dtype = neighbor_vectors.device, neighbor_vectors.dtype
         type_map_temp: torch.Tensor = element_map.to(torch.int64)
         type_map: List[int] = type_map_temp.tolist()
         feature = BPMlp.calculate_bp_feature(type_map=self.type_map,
                                              bp_features_information=self.bp_features_information,
                                              bp_features_param=self.bp_features_param,
                                              element_map=element_map,
-                                             Nij=Nij,
-                                             Zij=Zij,
-                                             Rij=Rij)
-        feature = BPMlp.scale(self.type_map, type_map, self.std_mean, feature, Zi)
+                                             neighbor_indices=neighbor_indices,
+                                             neighbor_types=neighbor_types,
+                                             neighbor_vectors=neighbor_vectors)
+        feature = BPMlp.scale(self.type_map, type_map, self.std_mean, feature, central_atoms)
         Ei = torch.zeros(batch, n_atoms, 1, dtype=dtype, device=device)
         for i, itype in enumerate(type_map):
-            mask_itype = (Zi == itype)
+            mask_itype = (central_atoms == itype)
             if not mask_itype.any():
                 continue
             iifeat = feature[mask_itype].reshape(batch, -1, feature.shape[-1])
@@ -97,9 +95,9 @@ class BPMlp(FieldModel):
                              bp_features_information: List[Tuple[str, int]],
                              bp_features_param: List[Tuple[Dict[str, torch.Tensor], Dict[str, str]]],
                              element_map: torch.Tensor,
-                             Nij: torch.Tensor,
-                             Zij: torch.Tensor,
-                             Rij: torch.Tensor) -> torch.Tensor:
+                             neighbor_indices: torch.Tensor,
+                             neighbor_types: torch.Tensor,
+                             neighbor_vectors: torch.Tensor,) -> torch.Tensor:
         feature_list: List[torch.Tensor] = []
         for i, feature_information in enumerate(bp_features_information):
             feature_name = feature_information[0]
@@ -111,9 +109,9 @@ class BPMlp(FieldModel):
                                             rs=bp_features_param[i][0]['rs'],
                                             smooth_type=bp_features_param[i][1]['smooth_fun'],
                                             element_map=element_map,
-                                            Nij=Nij,
-                                            Zij=Zij,
-                                            Rij=Rij)
+                                            neighbor_indices=neighbor_indices,
+                                            neighbor_types=neighbor_types,
+                                            neighbor_vectors=neighbor_vectors)
                 feature_list.append(Rad_feature)
 
             if feature_name == "SymFunAngW":
@@ -126,9 +124,9 @@ class BPMlp(FieldModel):
                                                 rs=bp_features_param[i][0]['rs'],
                                                 smooth_type=bp_features_param[i][1]['smooth_fun'],
                                                 element_map=element_map,
-                                                Nij=Nij,
-                                                Zij=Zij,
-                                                Rij=Rij)
+                                                neighbor_indices=neighbor_indices,
+                                                neighbor_types=neighbor_types,
+                                                neighbor_vectors=neighbor_vectors)
                 feature_list.append(Ang_w_feature)
 
             if feature_name == "SymFunAngN":
@@ -141,9 +139,9 @@ class BPMlp(FieldModel):
                                                 rs=bp_features_param[i][0]['rs'],
                                                 smooth_type=bp_features_param[i][1]['smooth_fun'],
                                                 element_map=element_map,
-                                                Nij=Nij,
-                                                Zij=Zij,
-                                                Rij=Rij)
+                                                neighbor_indices=neighbor_indices,
+                                                neighbor_types=neighbor_types,
+                                                neighbor_vectors=neighbor_vectors)
                 feature_list.append(Ang_n_feature)
 
         feature = torch.cat([tensor for tensor in feature_list], dim=-1)
@@ -169,16 +167,15 @@ class BPMlp(FieldModel):
                 rs: torch.Tensor,
                 smooth_type: str,
                 element_map: torch.Tensor,
-                Nij: torch.Tensor,
-                Zij: torch.Tensor,
-                Rij: torch.Tensor) -> torch.Tensor:
-        batch, n_atoms, max_neighbor = Nij.shape
+                neighbor_indices: torch.Tensor,
+                neighbor_types: torch.Tensor,
+                neighbor_vectors: torch.Tensor,) -> torch.Tensor:
+        batch, n_atoms, max_neighbor = neighbor_types.shape
+        device, dtype = neighbor_vectors.device, neighbor_vectors.dtype
         n_basis = eta.shape[0]
-        device = Rij.device
-        dtype = Rij.dtype
         include_element_list: List[int] = element_map.to(torch.int64).tolist()
 
-        rij = Rij[:, :, :, 0].unsqueeze(-1)
+        rij = neighbor_vectors[:, :, :, 0].unsqueeze(-1)
 
         f_rij = smooth_fun(smooth_type=smooth_type, rij=rij, r_inner=R_min, r_outer=R_max)
         g_rij = torch.exp(-eta * (rij - rs) ** 2) * f_rij
@@ -186,7 +183,7 @@ class BPMlp(FieldModel):
 
         for i, itype in enumerate(include_element_list):
             indices = type_map.index(itype)
-            mask_g = (Zij == itype).unsqueeze(-1)
+            mask_g = (neighbor_indices == itype).unsqueeze(-1)
             Gi[:, :,  n_basis * indices:n_basis * (indices + 1)] = torch.sum(g_rij * mask_g, dim=2)
 
         return Gi
@@ -201,15 +198,14 @@ class BPMlp(FieldModel):
                   rs: torch.Tensor,
                   smooth_type: str,
                   element_map: torch.Tensor,
-                  Nij: torch.Tensor,
-                  Zij: torch.Tensor,
-                  Rij: torch.Tensor) -> torch.Tensor:
-        batch, n_atoms, max_neighbor = Nij.shape
+                  neighbor_indices: torch.Tensor,
+                  neighbor_types: torch.Tensor,
+                  neighbor_vectors: torch.Tensor,) -> torch.Tensor:
+        batch, n_atoms, max_neighbor = neighbor_types.shape
+        device, dtype = neighbor_vectors.device, neighbor_vectors.dtype
         n_basis = eta.shape[0]
-        device = Rij.device
-        dtype = Rij.dtype
         include_element_list: List[int] = element_map.to(torch.int64).tolist()
-        rij = Rij[:, :, :, 0:1]
+        rij = neighbor_vectors[:, :, :, 0:1]
         # Guaranteed not to divide by 0
         mask_rij = (rij > 1e-5)
         rr = torch.zeros(rij.shape, dtype=dtype, device=device)
@@ -217,13 +213,13 @@ class BPMlp(FieldModel):
 
         frij = smooth_fun(smooth_type=smooth_type, rij=rij, r_inner=R_min, r_outer=R_max)
         grij = torch.exp(-eta * (rij - rs) ** 2) * frij
-        cos_ijk = (torch.matmul(Rij[:, :, :, 1:], Rij[:, :, :, 1:].transpose(-1, -2))
+        cos_ijk = (torch.matmul(neighbor_vectors[:, :, :, 1:], neighbor_vectors[:, :, :, 1:].transpose(-1, -2))
                    * (rr * rr.transpose(-2, -1))).unsqueeze(2)
         Gi = torch.zeros(batch, n_atoms, int(n_basis * len(type_map) ** 2), dtype=dtype, device=device)
 
         for i, itype in enumerate(include_element_list):
             i_indices = type_map.index(itype)
-            mask_i = (Zij == itype).unsqueeze(-1)
+            mask_i = (neighbor_indices == itype).unsqueeze(-1)
             gij = grij * mask_i
             # gij [batch, n_atoms, n_basis, max_neighbor, 1]
             gij = gij.transpose(2, 3).unsqueeze(-1)
@@ -234,7 +230,7 @@ class BPMlp(FieldModel):
             for j, jtype in enumerate(include_element_list):
                 j_indices = type_map.index(jtype)
                 indices = i_indices * len(type_map) + j_indices
-                mask_j = (Zij == itype).unsqueeze(-1)
+                mask_j = (neighbor_indices == itype).unsqueeze(-1)
                 gik = grij * mask_j
                 # gik [batch, n_atoms, n_basis, 1, max_neighbor]
                 gik = gik.transpose(2, 3).unsqueeze(-2)
@@ -253,15 +249,14 @@ class BPMlp(FieldModel):
                   rs: torch.Tensor,
                   smooth_type: str,
                   element_map: torch.Tensor,
-                  Nij: torch.Tensor,
-                  Zij: torch.Tensor,
-                  Rij: torch.Tensor):
-        batch, n_atoms, max_neighbor = Nij.shape
+                  neighbor_indices: torch.Tensor,
+                  neighbor_types: torch.Tensor,
+                  neighbor_vectors: torch.Tensor,):
         n_basis = eta.shape[0]
-        device = Rij.device
-        dtype = Rij.dtype
+        batch, n_atoms, max_neighbor = neighbor_types.shape
+        device, dtype = neighbor_vectors.device, neighbor_vectors.dtype
         include_element_list: List[int] = element_map.to(torch.int64).tolist()
-        rij = Rij[:, :, :, 0:1]
+        rij = neighbor_vectors[:, :, :, 0:1]
 
         # Guaranteed not to divide by 0
         mask_rij = (rij > 1e-5)
@@ -271,9 +266,9 @@ class BPMlp(FieldModel):
         frij = smooth_fun(smooth_type=smooth_type, rij=rij, r_inner=R_min, r_outer=R_max)
         grij = torch.exp(-eta * (rij - rs) ** 2) * frij
         # cos_ijk [batch, n_atoms, 1,max_neighbor, max_neighbor]
-        cos_ijk = (torch.matmul(Rij[:, :, :, 1:], Rij[:, :, :, 1:].transpose(-1, -2))
+        cos_ijk = (torch.matmul(neighbor_vectors[:, :, :, 1:], neighbor_vectors[:, :, :, 1:].transpose(-1, -2))
                    * (rr * rr.transpose(-2, -1))).unsqueeze(2)
-        rjk2 = ((Rij[:, :, :, 1:].unsqueeze(3) - Rij[:, :, :, 1:].unsqueeze(3).permute(0, 1, 3, 2, 4)) ** 2).sum(-1)
+        rjk2 = ((neighbor_vectors[:, :, :, 1:].unsqueeze(3) - neighbor_vectors[:, :, :, 1:].unsqueeze(3).permute(0, 1, 3, 2, 4)) ** 2).sum(-1)
         mask_rjk = (rjk2 > 1e-5)
         rjk = torch.zeros(rjk2.shape, dtype=dtype, device=device)
         rjk[mask_rjk] = rjk[mask_rjk] ** 0.5
@@ -283,7 +278,7 @@ class BPMlp(FieldModel):
         Gi = torch.zeros(batch, n_atoms, int(n_basis * len(type_map) ** 2), dtype=dtype, device=device)
         for i, itype in enumerate(include_element_list):
             i_indices = type_map.index(itype)
-            mask_i = (Zij == itype).unsqueeze(-1)
+            mask_i = (neighbor_indices == itype).unsqueeze(-1)
             gij = grij * mask_i
             # gij [batch, n_atoms, n_basis, max_neighbor, 1]
             gij = gij.transpose(2, 3).unsqueeze(-1)
@@ -295,7 +290,7 @@ class BPMlp(FieldModel):
             for j, jtype in enumerate(include_element_list):
                 j_indices = type_map.index(jtype)
                 indices = i_indices * len(type_map) + j_indices
-                mask_j = (Zij == itype).unsqueeze(-1)
+                mask_j = (neighbor_indices == itype).unsqueeze(-1)
                 gik = grij * mask_j
                 # gik [batch, n_atoms, n_basis, 1, max_neighbor]
                 gik = gik.transpose(2, 3).unsqueeze(-2)
@@ -372,19 +367,18 @@ class BPNN(FieldModel):
 
     def field(self,
               element_map: torch.Tensor,
-              Zi: torch.Tensor,
-              Nij: torch.Tensor,
-              Zij: torch.Tensor,
-              Rij: torch.Tensor,
+              central_atoms: torch.Tensor,
+              neighbor_indices: torch.Tensor,
+              neighbor_types: torch.Tensor,
+              neighbor_vectors: torch.Tensor,
               n_ghost: int):
-        device = Rij.device
-        dtype = Rij.dtype
+        device, dtype = neighbor_vectors.device, neighbor_vectors.dtype
         type_map_tensor = torch.tensor(self.type_map)
         mapped_value = torch.arange(0, len(self.type_map))
         mapped_table = torch.full(size=(int(torch.max(type_map_tensor).item()) + 1, ), fill_value=-1).to(device=device)
         mapped_table[type_map_tensor] = mapped_value
-        mapped_Zi = mapped_table[Zi]
-        feature = self.descriptor(mapped_Zi=mapped_Zi, Rij=Rij)
+        mapped_Zi = mapped_table[central_atoms]
+        feature = self.descriptor(mapped_Zi=mapped_Zi, neighbor_vectors=neighbor_vectors)
         Ei = self.fitting_net(feature, mapped_Zi)
         Etot = torch.sum(Ei,dim=1)
         return Etot, Ei

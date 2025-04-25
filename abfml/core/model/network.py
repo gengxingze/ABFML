@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 from typing import List, Tuple
-from abfml.model.math_fun import ActivationModule
+from abfml.core.model.math_fun import ActivationModule
 
 
 class EmbeddingNet(nn.Module):

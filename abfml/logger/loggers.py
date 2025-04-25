@@ -12,10 +12,6 @@ class AverageMeter(object):
             self.summary_type = summary_type
         else:
             raise ValueError(f"Invalid summary type : {summary_type}, supported only {summary_type_list}")
-        self.val = 0
-        self.avg = 0
-        self.sum = 0
-        self.count = 0
         self.reset()
 
     def reset(self):
@@ -89,17 +85,21 @@ def log_logo(logger:logging.Logger):
 
 
 def log_data_info(logger: logging.Logger, dataclass: ReadData):
-    total_frames = 0
     logger.info("| ################ file name ############### Atom number ## nframes ######### Element ######## |")
-    for data_information in dataclass.data_information:
-        file_name = data_information['file_name'][-45:]
-        n_frames = data_information['n_frames']
-        chemical_symbols = ','.join(data_information['include_element']) if len(data_information['include_element']) \
-                           <= 5 else 'complex'
-        n_atoms = str(data_information['include_atoms_number'].pop()) if len(data_information['include_atoms_number']) == 1 \
-            else 'variation'
-        logger.info(f"|{file_name:>49s}{n_atoms:>6s}{n_frames:>8d}{chemical_symbols:>18s}")
+    total_frames = 0
+
+    for data_info in dataclass.data_information:
+        file_name = data_info.get("file_name", "")[-45:]
+        n_frames = data_info.get("n_frames", 0)
+        elements = data_info.get("include_element", [])
+        atom_counts = data_info.get("include_atoms_number", set())
+
+        symbols = ','.join(elements) if len(elements) <= 5 else "complex"
+        atom_number = str(next(iter(atom_counts))) if len(atom_counts) == 1 else "variation"
+
+        logger.info(f"|{file_name:>49s}{atom_number:>6s}{n_frames:>8d}{symbols:>18s}")
         total_frames += n_frames
-    logger.info(f"| Number of files found: {len(dataclass.data_information):>4d}, number of image : {total_frames:>4d}")
+
+    logger.info(f"| Number of files found: {len(dataclass.data_information):>4d}, number of images: {total_frames:>5d}")
     logger.info(f"+----------------------------------------------------------------------------------------------+")
 

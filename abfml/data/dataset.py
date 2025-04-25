@@ -3,69 +3,85 @@ from torch.utils.data import Dataset
 
 
 class ABFMLDataset(Dataset):
-    def __init__(self,
-                 n_frames: int,
-                 n_atoms: int,
-                 element_type: torch.Tensor,
-                 Zi: torch.Tensor,
-                 Nij: torch.Tensor,
-                 Zij: torch.Tensor,
-                 Rij: torch.Tensor,
-                 energy: torch.Tensor = None,
-                 atomic_energy: torch.Tensor = None,
-                 force: torch.Tensor = None,
-                 virial: torch.Tensor = None,
-                 ):
-        super(ABFMLDataset, self).__init__()
-        self.n_frames = n_frames
-        self.n_atoms = n_atoms
+    def __init__(
+        self,
+        num_frames: int,
+        num_atoms: int,
+        element_types: torch.Tensor,
+        central_atoms: torch.Tensor,
+        neighbor_indices: torch.Tensor,
+        neighbor_types: torch.Tensor,
+        neighbor_vectors: torch.Tensor,
+        energy: torch.Tensor = None,
+        atomic_energies: torch.Tensor = None,
+        forces: torch.Tensor = None,
+        virials: torch.Tensor = None,
+    ):
+        super().__init__()
+        self.num_frames = num_frames
+        self.num_atoms = num_atoms
 
-        physics_name = ["energy", "atomic_energy", "force", "virial"]
-        physics_var = [energy, atomic_energy, force, virial]
-        physics_shape = [(n_frames, 1), (n_frames, n_atoms, 1), (n_frames, n_atoms, 3), (n_frames, 9)]
-        for tensor_p, shape_p, name_p in zip(physics_var, physics_shape, physics_name):
-            if tensor_p is not None:
-                if not isinstance(tensor_p, torch.Tensor):
-                    raise TypeError(f"If {name_p} is required, then the type of a should be torch.Tensor, "
-                                    f"but its type is {type(tensor_p)}")
-                if tensor_p.shape != shape_p:
-                    raise ValueError(f"Expected shape of {name_p} is {shape_p},"
-                                     f"but the shape you get is {tensor_p.shape}")
-        self.atomic_energy = atomic_energy
+        # Validate physical quantities
+        physics_info = {
+            "energy": (energy, (num_frames, 1)),
+            "atomic_energies": (atomic_energies, (num_frames, num_atoms, 1)),
+            "forces": (forces, (num_frames, num_atoms, 3)),
+            "virials": (virials, (num_frames, 9)),
+        }
+
+        for name, (tensor, expected_shape) in physics_info.items():
+            if tensor is not None:
+                if not isinstance(tensor, torch.Tensor):
+                    raise TypeError(f"{name} must be a torch.Tensor, but got {type(tensor)}.")
+                if tensor.shape != expected_shape:
+                    raise ValueError(f"{name} must have shape {expected_shape}, but got {tensor.shape}.")
+
         self.energy = energy
-        self.force = force
-        self.virial = virial
+        self.atomic_energies = atomic_energies
+        self.forces = forces
+        self.virials = virials
 
-        neighbor_name = ["Zi", "Nij", "Zij", "Rij"]
-        neighbor_var = [Zi, Nij, Zij, Rij]
-        neighbor_shape = [(n_frames, n_atoms), (n_frames, n_atoms, Nij.shape[-1]),
-                          (n_frames, n_atoms, Nij.shape[-1]), (n_frames, n_atoms, Nij.shape[-1], 4)]
-        for tensor_n, shape_n, name_n in zip(neighbor_var, neighbor_shape, neighbor_name):
-            if not isinstance(tensor_n, torch.Tensor):
-                raise TypeError(f"The type of {name_n} should to be torch.Tensor, but its {type(tensor_n)}")
-            if tensor_n.shape != shape_n:
-                raise ValueError(f"Expected shape of {name_n} is {shape_n}, but the shape you get is {tensor_n.shape}")
-        self.element_type = element_type
-        self.Zi = Zi
-        self.Nij = Nij
-        self.Zij = Zij
-        self.Rij = Rij
+        # Validate neighbor-related tensors
+        num_neighbors = neighbor_indices.shape[-1]
+        neighbor_info = {
+            "central_atoms": (central_atoms, (num_frames, num_atoms)),
+            "neighbor_indices": (neighbor_indices, (num_frames, num_atoms, num_neighbors)),
+            "neighbor_types": (neighbor_types, (num_frames, num_atoms, num_neighbors)),
+            "neighbor_vectors": (neighbor_vectors, (num_frames, num_atoms, num_neighbors, 4)),
+        }
+
+        for name, (tensor, expected_shape) in neighbor_info.items():
+            if not isinstance(tensor, torch.Tensor):
+                raise TypeError(f"{name} must be a torch.Tensor, but got {type(tensor)}.")
+            if tensor.shape != expected_shape:
+                raise ValueError(f"{name} must have shape {expected_shape}, but got {tensor.shape}.")
+
+        self.element_types = element_types
+        self.central_atoms = central_atoms
+        self.neighbor_indices = neighbor_indices
+        self.neighbor_types = neighbor_types
+        self.neighbor_vectors = neighbor_vectors
 
     def __len__(self):
-        return self.n_frames
+        return self.num_frames
 
     def __getitem__(self, index):
-        mlff_dict = {
-            'n_atoms': self.n_atoms,
-            'element_type': self.element_type,
-            'Zi': self.Zi[index],
-            'Nij': self.Nij[index],
-            'Zij': self.Zij[index],
-            'Rij': self.Rij[index],
+        sample = {
+            "num_atoms": self.num_atoms,
+            "element_types": self.element_types,
+            "central_atoms": self.central_atoms[index],
+            "neighbor_indices": self.neighbor_indices[index],
+            "neighbor_types": self.neighbor_types[index],
+            "neighbor_vectors": self.neighbor_vectors[index],
         }
-        optional_name = ["energy", "atomic_energy", "force", "virial"]
-        optional_val = [self.energy, self.atomic_energy, self.force, self.virial]
-        for tensor, name in zip(optional_val, optional_name):
-            if tensor is not None:
-                mlff_dict[name] = tensor[index]
-        return mlff_dict
+
+        if self.energy is not None:
+            sample["energy"] = self.energy[index]
+        if self.atomic_energies is not None:
+            sample["atomic_energies"] = self.atomic_energies[index]
+        if self.forces is not None:
+            sample["forces"] = self.forces[index]
+        if self.virials is not None:
+            sample["virials"] = self.virials[index]
+
+        return sample

@@ -1,10 +1,9 @@
-import time
 import torch
 import torch.nn as nn
-from typing import List, Optional, Dict, Tuple, Any
-from abfml.model.math_fun import smooth_fun, polynomial_fun, compute_forces_and_virial, calculate_distance_grad
-from abfml.model.network import FittingNet
-from abfml.model.method import FieldModel
+from typing import List, Optional, Dict, Any
+from abfml.core.model.math_fun import smooth_fun, polynomial_fun
+from abfml.core.model.network import FittingNet
+from abfml.core.model.method import FieldModel
 
 
 @torch.jit.interface

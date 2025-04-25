@@ -140,36 +140,6 @@ def main_parser() -> argparse.ArgumentParser:
     )
     # ************************************** check parser end   **************************************
 
-    # ************************************** compress parser start **************************************
-    parser_compress = subparsers.add_parser(
-        "compress",
-        parents=[],
-        help="compress the model",
-        formatter_class=RawTextArgumentDefaultsHelpFormatter,
-        epilog=textwrap.dedent(
-            """\
-        examples:
-            abfml compress -i model.pt -o compress_model.pt
-        """
-        ),
-    )
-    parser_compress.add_argument(
-        "-i",
-        "--input",
-        default="model.pt",
-        type=str,
-        help="The original frozen model, which will be compressed by the code",
-    )
-    parser_compress.add_argument(
-        "-o",
-        "--output",
-        default="compress_model.pt",
-        type=str,
-        help="The compressed model",
-    )
-
-    # ************************************** compress parser end  **************************************
-
     return parser
 
 

@@ -1,11 +1,10 @@
-import time
 import torch
 import torch.nn as nn
-from abfml.model.method import FieldModel
-from typing import List, Optional, Tuple
-from abfml.model.math_fun import smooth_fun
-from abfml.model.network import EmbeddingNet, FittingNet
-from typing import List, Optional, Dict, Any
+from abfml.core.model.method import FieldModel
+from typing import List, Optional, Dict, Any, Union
+from abfml.core.model.math_fun import smooth_fun
+from abfml.core.model.network import EmbeddingNet, FittingNet
+
 
 
 @torch.jit.interface
@@ -18,7 +17,7 @@ class DpSe2a(FieldModel):
     def __init__(self,
                  type_map: List[int],
                  cutoff: float,
-                 neighbor: List[int],
+                 neighbor: Union[Dict[int, int], int],
                  fitting_config: Dict[str, Any],
                  embedding_config: Dict[str, Any],
                  energy_shift: List[float],
@@ -54,29 +53,28 @@ class DpSe2a(FieldModel):
 
     def field(self,
               element_map: torch.Tensor,
-              Zi: torch.Tensor,
-              Zij: torch.Tensor,
-              Nij: torch.Tensor,
-              Rij: torch.Tensor,
-              n_ghost: int) -> Tuple[torch.Tensor, torch.Tensor]:
+              central_atoms: torch.Tensor,
+              neighbor_indices: torch.Tensor,
+              neighbor_types: torch.Tensor,
+              neighbor_vectors: torch.Tensor,
+              n_ghost: int) -> Dict[str, torch.Tensor]:
         # t1 = time.time()
-        batch, n_atoms, max_neighbor = Zij.shape
-        device = Rij.device
-        dtype = Rij.dtype
+        batch, n_atoms, max_neighbor = neighbor_types.shape
+        device, dtype = neighbor_vectors.device, neighbor_vectors.dtype
         type_map: List[int] = element_map.to(torch.int64).tolist()
         width_map: List[int] = [0]
-        for ii in type_map:
-            width_map.append(self.neighbor[self.type_map.index(ii)] + width_map[-1])
+        for element in type_map:
+            width_map.append(self.neighbor[element] + width_map[-1])
         # t2 = time.time()
         # Ri[batch, n_atoms, max_neighbor, 4] 4-->(srij, srij * xij/rij, srij * zij/rij, srij * zij/rij)
         Ri = DpSe2a.calculate_coordinate_matrix(R_min=self.R_min, R_max=self.R_max,
-                                                smooth_type=self.smooth_fun, Rij=Rij)
-        Ri = DpSe2a.scale(self.type_map, type_map, self.std_mean, Ri, Zi)
+                                                smooth_type=self.smooth_fun, Rij=neighbor_vectors)
+        Ri = DpSe2a.scale(self.type_map, type_map, self.std_mean, Ri, central_atoms)
 
         # Ei[batch, n_atoms, 1]
         Ei = torch.zeros(batch, n_atoms, 1, dtype=dtype, device=device)
         for i, itype in enumerate(type_map):
-            mask_itype = (Zi == itype)
+            mask_itype = (central_atoms == itype)
             if not mask_itype.any():
                 continue
             i_Ri = Ri[mask_itype].reshape(batch, -1, max_neighbor, 4)
@@ -104,7 +102,7 @@ class DpSe2a(FieldModel):
             Ei[mask_itype] = Ei_mask.reshape(-1, 1)
 
         Etot = torch.sum(Ei, dim=1)
-        return Etot, Ei
+        return {'Etot': Etot, 'Ei':Ei}
 
     @staticmethod
     def calculate_coordinate_matrix(R_min: float,
@@ -112,13 +110,11 @@ class DpSe2a(FieldModel):
                                     smooth_type: str,
                                     Rij: torch.Tensor) -> torch.Tensor:
         batch, n_atoms, max_neighbor, _ = Rij.shape
-        device = Rij.device
-        dtype = Rij.dtype
+        device, dtype = Rij.device, Rij.dtype
         rij = Rij[:, :, :, 0]
         xij = Rij[:, :, :, 1]
         yij = Rij[:, :, :, 2]
         zij = Rij[:, :, :, 3]
-        rij.requires_grad_()
 
         # Guaranteed not to divide by 0
         mask_rij = (rij > 1e-5)
@@ -145,11 +141,11 @@ class DpSe2a(FieldModel):
               type_map_use: List[int],
               std_mean: List[torch.Tensor],
               Ri: torch.Tensor,
-              Zi: torch.Tensor) -> torch.Tensor:
+              central_atoms: torch.Tensor) -> torch.Tensor:
         for i, element in enumerate(type_map_use):
             indices = type_map_all.index(element)
             device = Ri.device
-            mask = (Zi == element)
+            mask = (central_atoms == element)
             std = std_mean[0][indices].detach().to(device)
             avg = std_mean[1][indices].detach().to(device)
             Ri[mask] = (Ri[mask] - avg) / std
@@ -160,7 +156,7 @@ class DpSe2r(FieldModel):
     def __init__(self,
                  type_map: List[int],
                  cutoff: float,
-                 neighbor: List[int],
+                 neighbor: Union[Dict[int, int], int],
                  fitting_config: Dict[str, Any],
                  embedding_config: Dict[str, Any],
                  energy_shift: List[float],
@@ -199,15 +195,14 @@ class DpSe2r(FieldModel):
 
     def field(self,
               element_map: torch.Tensor,
-              Zi: torch.Tensor,
-              neighbor_list: torch.Tensor,
-              Zij: torch.Tensor,
-              Rij: torch.Tensor,
+              central_atoms: torch.Tensor,
+              neighbor_indices: torch.Tensor,
+              neighbor_types: torch.Tensor,
+              neighbor_vectors: torch.Tensor,
               n_ghost: int):
         # time1 = time.time()
-        batch, n_atoms, max_neighbor = neighbor_list.shape
-        device = Rij.device
-        dtype = Rij.dtype
+        batch, n_atoms, max_neighbor = neighbor_types.shape
+        device, dtype = neighbor_vectors.device, neighbor_vectors.dtype
         # Must be set to int64, or it will cause a type mismatch when run in c++.
         type_map = element_map.to(torch.int64).tolist()
         width_map: List[int] = [0]
@@ -216,12 +211,12 @@ class DpSe2r(FieldModel):
         # Ri[batch, n_atoms, max_neighbor,1] 1-->(srij) For se_r consider only Srij
 
         Ri = DpSe2r.calculate_coordinate_matrix(R_min=self.R_min, R_max=self.R_max,
-                                                smooth_type=self.smooth_fun, Rij=Rij)
-        Ri = DpSe2r.scale(self.type_map, type_map, self.std_mean, Ri, Zi)
+                                                smooth_type=self.smooth_fun, Rij=neighbor_vectors)
+        Ri = DpSe2r.scale(self.type_map, type_map, self.std_mean, Ri, central_atoms)
         # Ei[batch, n_atoms, 1]
         Ei = torch.zeros(batch, n_atoms, 1, dtype=dtype, device=device)
         for i, itype in enumerate(type_map):
-            mask_itype = (Zi == itype)
+            mask_itype = (central_atoms == itype)
             if not mask_itype:
                 continue
             i_Ri = Ri[mask_itype].reshape(batch, -1, max_neighbor, 1)
@@ -246,7 +241,7 @@ class DpSe2r(FieldModel):
         # Etot[batch, 1]
         Etot = torch.sum(Ei, dim=1)
 
-        return Etot, Ei
+        return {'Etot': Etot, 'Ei':Ei}
 
     @staticmethod
     def calculate_coordinate_matrix(R_min: float,
@@ -270,11 +265,11 @@ class DpSe2r(FieldModel):
               type_map_use: List[int],
               std_mean: List[torch.Tensor],
               Ri: torch.Tensor,
-              Zi: torch.Tensor) -> torch.Tensor:
+              central_atoms: torch.Tensor) -> torch.Tensor:
         for i, element in enumerate(type_map_use):
             indices = type_map_all.index(element)
             device = Ri.device
-            mask = (Zi == element)
+            mask = (central_atoms == element)
             std = std_mean[0][indices].detach().to(device)
             avg = std_mean[1][indices].detach().to(device)
             Ri[mask] = (Ri[mask] - avg[0]) / std[0]
@@ -285,7 +280,7 @@ class DpSe3(FieldModel):
     def __init__(self,
                  type_map: List[int],
                  cutoff: float,
-                 neighbor: List[int],
+                 neighbor: Union[Dict[int, int], int],
                  fitting_config: Dict[str, Any],
                  embedding_config: Dict[str, Any],
                  energy_shift: List[float],
@@ -324,14 +319,13 @@ class DpSe3(FieldModel):
 
     def field(self,
               element_map: torch.Tensor,
-              Zi: torch.Tensor,
-              neighbor_list: torch.Tensor,
-              Zij: torch.Tensor,
-              Rij: torch.Tensor,
+              central_atoms: torch.Tensor,
+              neighbor_indices: torch.Tensor,
+              neighbor_types: torch.Tensor,
+              neighbor_vectors: torch.Tensor,
               n_ghost: int):
-        batch, n_atoms, max_neighbor = neighbor_list.shape
-        device = Rij.device
-        dtype = Rij.dtype
+        batch, n_atoms, max_neighbor = neighbor_types.shape
+        device, dtype = neighbor_vectors.device, neighbor_vectors.dtype
         # Must be set to int64, or it will cause a type mismatch when run in c++.
         type_map: List[int] = element_map.to(torch.int64).tolist()
         width_map: List[int] = [0]
@@ -340,24 +334,24 @@ class DpSe3(FieldModel):
 
         # Ri[batch, n_atoms, max_neighbor, 4] 4-->(srij, srij * xij/rij, srij * zij/rij, srij * zij/rij)
         Ri = DpSe2a.calculate_coordinate_matrix(R_min=self.R_min, R_max=self.R_max,
-                                                smooth_type=self.smooth_fun, Rij=Rij)
-        Ri = DpSe2a.scale(self.type_map, type_map, self.std_mean, Ri, Zi)
+                                                smooth_type=self.smooth_fun, Rij=neighbor_vectors)
+        Ri = DpSe2a.scale(self.type_map, type_map, self.std_mean, Ri, central_atoms)
 
-        rij = Rij[:, :, :, 0].unsqueeze(-1)
+        rij = neighbor_vectors[:, :, :, 0].unsqueeze(-1)
         # Guaranteed not to divide by 0
         mask_rij = (rij > 1e-5)
         rr = torch.zeros(rij.shape, dtype=dtype, device=device)
         rr[mask_rij] = 1 / rij[mask_rij]
         # theta_ijk [batch, n_atoms, max_neighbor, max_neighbor]
         theta_ijk = (Ri[:, :, :, 0].unsqueeze(-1) * Ri[:, :, :, 0].unsqueeze(-2)
-                     * (torch.matmul(Rij[:, :, :, 1:], Rij[:, :, :, 1:].transpose(-1, -2))
+                     * (torch.matmul(neighbor_vectors[:, :, :, 1:], neighbor_vectors[:, :, :, 1:].transpose(-1, -2))
                      * (rr * rr.transpose(-2, -1))))
 
         # Ei[batch, n_atoms, 1]
         Ei = torch.zeros(batch, n_atoms, 1, dtype=dtype, device=device)
         for i, itype in enumerate(type_map):
 
-            mask_itype = (Zi == itype)
+            mask_itype = (central_atoms == itype)
             if not mask_itype.any():
                 continue
             i_theta_ijk = theta_ijk[mask_itype].reshape(batch, -1, max_neighbor, max_neighbor, 1)
@@ -368,7 +362,7 @@ class DpSe3(FieldModel):
                 theta = i_theta_ijk[:, :, width_map[j]:width_map[j+1], :, 0].unsqueeze(-1)
                 ij = self.embedding_net_index.index(str(itype) + "_" + str(jtype))
                 embedding_net: ModuleInterface = self.embedding_net[ij]
-                # G[batch, n_atoms of itype, max_neighbor,max_neighbor, embedding_net_size[-1]]
+                # G[batch, n_atoms of itype, max_neighbor, max_neighbor, embedding_net_size[-1]]
                 Gj = embedding_net.forward(theta)
                 Gi[:, :, width_map[j]:width_map[j + 1], :, :] = Gj
             # Di[batch, n_atoms of itype, embedding_size[-1]]
@@ -379,4 +373,4 @@ class DpSe3(FieldModel):
             Ei_mask = fitting_net.forward(Di)
             Ei[mask_itype] = Ei_mask.reshape(-1, 1)
         Etot = torch.sum(Ei, dim=1)
-        return Etot, Ei
+        return {'Etot': Etot, 'Ei':Ei}

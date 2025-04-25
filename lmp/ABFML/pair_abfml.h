@@ -32,7 +32,7 @@ namespace LAMMPS_NS {
             double init_one(int, int) override;
             void init_style() override;
             int get_node_rank();
-            void calculate_neighbor();
+            void reform_neighbor();
 
         protected:
             virtual void allocate();

@@ -43,10 +43,9 @@ def valid_mlff(
     valid_dataclass = ReadData(filename=filename_list,
                                cutoff=model_class.cutoff,
                                neighbor=model_class.neighbor,
-                               type_map=model_class.type_map,
                                file_format=None)
     log_data_info(logger, valid_dataclass)
-    valid_data = ConcatDataset(valid_dataclass.get_mlffdata())
+    valid_data = ConcatDataset(valid_dataclass.create_dataset())
     total_indices = np.arange(len(valid_data))
     if shuffle:
         logger.info(f"| You will randomly select  {numb_test:>4d} image")
@@ -63,7 +62,7 @@ def valid_mlff(
                                  print_freq=1,
                                  save_predict=True)
     logger.info(f"+----------------------------------------------------------------------------------------------+")
-    unit = {'energy': 'eV', 'force':'eV/$\AA$', 'virial': 'eV'}
+    unit = {'energy': 'eV', 'forces':'eV/$\AA$', 'virials': 'eV'}
     # Print the Quality Of Data header
     logger.info(f"|{'Quality Of Data'.center(94)}|")
     logger.info(f"| {'Key':<16} {'DFT Mean':>17} {'DFT Sigma':>17} {'Predict Mean':>17} {'Predict Sigma':>17}     |")
