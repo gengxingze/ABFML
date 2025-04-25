@@ -108,7 +108,7 @@ To run an example using ABFML, follow these steps:
 Use the ASE calculator to perform quick calculations on the model created.
 
 ```python
-from abfml.core.calculate import ABFML
+from abfml.calculate import ABFML
 from ase.build import bulk
 
 calc = ABFML('model.pt')

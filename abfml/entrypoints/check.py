@@ -10,7 +10,7 @@ from torch.utils.data import ConcatDataset
 from abfml.param.param import Param
 from abfml.logger.loggers import Logger, log_logo
 from abfml.data.read_data import ReadData
-from abfml.core.calculate import ABFML
+from abfml.calculate import ABFML
 
 
 def check_mlff(
