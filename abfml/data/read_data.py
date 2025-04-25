@@ -206,7 +206,10 @@ class ReadData:
         return element_types, central_atoms, neighbor_indices, neighbor_types, neighbor_vectors
 
 
-def to_graph(central_atoms, neighbor_indices, neighbor_types, neighbor_vectors):
+def to_graph(central_atoms: torch.Tensor,
+             neighbor_indices: torch.Tensor,
+             neighbor_types: torch.Tensor,
+             neighbor_vectors: torch.Tensor) -> List[Data]:
     """
     Convert atomic neighbor information into a list of PyG graph objects (one per batch entry).
 

@@ -183,33 +183,42 @@ void PairABFML::coeff(int narg, char** arg) {
         }
 
     cutoff = model.attr("cutoff").toDouble();
-    auto neighbor_model = model.attr("neighbor").toIntVector();
+    auto neighbor_model = model.attr("neighbor");
     auto type_map_model = model.attr("type_map").toList();
 
     if (atom->ntypes > narg - 2) error->all(FLERR, "Element mapping not set");
 
     for (int ii = 2; ii < narg; ++ii) {
-        int temp = std::stoi(arg[ii]);
-        auto iter = std::find(type_map_model.begin(), type_map_model.end(), temp);
+        int chemical = std::stoi(arg[ii]);
+        auto iter = std::find(type_map_model.begin(), type_map_model.end(), chemical);
         if (iter != type_map_model.end()) {
-            type_map.push_back(temp);
+            type_map.push_back(chemical);
         } else {
             error->all(FLERR, "This element is not included in the machine learning force field");
         }
     }
 
-    if (neighbor_model.size() == 1) {
-        max_neighbor = neighbor_model[0];
-    } else {
+        if (std::holds_alternative<int>(neighbor_model)) {
+        // 如果是整型，所有元素共用一个 max_neighbor 值
+        max_neighbor = std::get<int>(neighbor_model);
+        std::cout << "Using uniform neighbor count: max_neighbor = " << max_neighbor << std::endl;
+        }
+        else {
+        // 否则按元素类型查找最近邻个数
+        auto model_map = std::get<std::map<int, int>>(neighbor_model);
         std::vector<int> type_map_temp = type_map;
         std::sort(type_map_temp.begin(), type_map_temp.end());
-        for (int ii = 0; ii < type_map.size(); ii++) {
-            int idx = std::find(type_map_model.begin(), type_map_model.end(), type_map_temp[ii]) - type_map_model.begin();
-            neighbor_map.push_back(neighbor_model[idx]);
-            max_neighbor += neighbor_map[ii];
-            neighbor_width.push_back(max_neighbor);
+        for (int elem : type_map_temp) {
+            if (model_map.find(elem) != model_map.end()) {
+                int n = model_map[elem];
+                neighbor_map.push_back(n);
+                max_neighbor += n;
+                neighbor_width.push_back(max_neighbor);
+            } else {
+                std::cerr << "Error: No neighbor setting for element " << elem << std::endl;
+                return 1;
+            }
         }
-    }
 
     if (count == 0) error->all(FLERR, "Incorrect args for pair coefficients");
 }
