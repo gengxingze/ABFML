@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "abfml"
-version = "2025.04.25"
+version = "2025.04.27"
 description = "A problem-oriented package for rapidly creating, screening, and optimizing new machine learning force fields"
 authors = [
     { name = "GengXingZe", email = "1308186024@qq.com" }
