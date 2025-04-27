@@ -24,10 +24,9 @@ dependencies = [
 [project.scripts]
 abfml = "abfml.main:main"
 
-[tool.setuptools]
-packages = [
-    "abfml"
-]
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["abfml*"]
 
 [project.urls]
 Homepage = "https://github.com/gengxingze/ABFML/"
