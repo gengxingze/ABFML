@@ -211,18 +211,18 @@ void PairABFML::coeff(int narg, char** arg) {
         for (int elem : type_map_temp) {
             if (model_map.find(elem) != model_map.end()) {
                 int n = model_map[elem];
-                neighbor_map.push_back(n);
+                neighbor_map.push_back(elem);
                 max_neighbor += n;
                 neighbor_width.push_back(max_neighbor);
             } else {
                 std::cerr << "Error: No neighbor setting for element " << elem << std::endl;
-                return 1;
             }
         }
 
     if (count == 0) error->all(FLERR, "Incorrect args for pair coefficients");
 }
 
+}
 /* ----------------------------------------------------------------------
    init for one type pair i,j and corresponding j,i
 ------------------------------------------------------------------------- */

@@ -26,14 +26,7 @@ abfml = "abfml.main:main"
 
 [tool.setuptools]
 packages = [
-    "abfml",
-    "abfml.core",
-    "abfml.data",
-    "abfml.param",
-    "abfml.logger",
-    "abfml.train",
-    "abfml.utils",
-    "abfml.entrypoints"
+    "abfml"
 ]
 
 [project.urls]
