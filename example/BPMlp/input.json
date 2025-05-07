@@ -56,8 +56,7 @@
                "save_check": 5,
                "batch_size": 1,
                "print_freq": 1,
-               "model_file": "model.pt",
-               "freeze_param": []
+               "model_file": "model.pt"
 },
 "loss_setting": {
                "start_energy_weight": 1.0,

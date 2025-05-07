@@ -190,7 +190,7 @@ def train_mlff(
         model.to(torch.float64)
     model.to(device=device)
 
-    if len(param_class.TrainSet.freeze_param) != 0:
+    if param_class.TrainSet.freeze_param is not None:
         logger.info(f"+----------------------------------- freeze or train param ------------------------------------+")
         namelist = [name for name, _ in model.named_parameters()]
         if not all(name in namelist for name in param_class.TrainSet.freeze_param[1:]):

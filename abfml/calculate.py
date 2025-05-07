@@ -50,7 +50,7 @@ class ABFML(Calculator):
             torch.tensor(neighbor_indices, device=self.device),
             torch.tensor(neighbor_types, device=self.device),
             torch.tensor(neighbor_vectors, dtype=self.dtype, device=self.device),
-            0  # Placeholder, usually reserved for batch index or flag
+            0  # In ASE, it is zero. Because neighbor of structure has not ghost atoms.
         ]
 
         # Model inference

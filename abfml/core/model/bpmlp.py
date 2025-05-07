@@ -73,7 +73,7 @@ class BPMlp(FieldModel):
             Ei_itype = fitting_net.forward(iifeat)
             Ei[mask_itype] = Ei_itype.reshape(-1, 1)
         Etot = torch.sum(Ei, dim=1)
-        return Etot, Ei
+        return {'Etot': Etot, 'Ei':Ei}
 
     @staticmethod
     def scale(type_map_all: List[int],

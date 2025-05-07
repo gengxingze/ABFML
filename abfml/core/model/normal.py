@@ -102,23 +102,22 @@ class FeatureNormal(NormalModel):
         from abfml.core.model.bpmlp import BPMlp
         for i, image_batch in enumerate(normal_loader):
             neighbor_vectors = image_batch["neighbor_vectors"]
-            element_types = image_batch["element_types"][0]
+            element_types = image_batch["element_types"][0].to(torch.int64)
             central_atoms = image_batch["central_atoms"]
             neighbor_indices = image_batch["neighbor_indices"]
             neighbor_types = image_batch["neighbor_types"]
 
-            element_type = image_batch["element_type"][0].to(torch.int64)
             Gi = BPMlp.calculate_bp_feature(type_map=type_map,
                                             bp_features_information=param_class.BPDescriptor.bp_features_information,
                                             bp_features_param=param_class.BPDescriptor.bp_features_param,
-                                            element_map=element_type,
+                                            element_map=element_types,
                                             neighbor_indices=neighbor_indices,
                                             neighbor_types=neighbor_types,
                                             neighbor_vectors=neighbor_vectors)
 
             # I think the sample standard deviation should be used instead of the standard deviation
             Gi = Gi.clone().detach()
-            for i_type, element in enumerate(element_type):
+            for i_type, element in enumerate(element_types):
                 mask = (central_atoms == element)
                 feature = Gi[mask]
                 feature_std, feature_mean = torch.std_mean(feature)
