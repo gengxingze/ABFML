@@ -9,7 +9,7 @@ from abfml.data.read_data import to_graph
 def main(atoms: Atoms):
     # 设置 cutoff 和 max_neighbors（字典形式）
     cutoff = 5.0
-    neighbor_dict = {14: 4, 8: 3}  # Si:4, O:3
+    neighbor_dict = {14: 11, 8: 9}  # Si:4, O:3
     # 调用 calculate_neighbor
     element_types, central_atoms, neighbor_indices, neighbor_types, neighbor_vectors = ReadData.calculate_neighbor(
         atoms=atoms,
@@ -26,7 +26,7 @@ def main(atoms: Atoms):
 
     # 设置 cutoff 和 max_neighbors（整数形式）
     cutoff = 5.0
-    neighbor_dict = 8  # Si:4, O:3
+    neighbor_dict = 20  # Si:4, O:3
     # 调用 calculate_neighbor
     element_types_1, central_atoms_1, neighbor_indices_1, neighbor_types_1, neighbor_vectors_1 = ReadData.calculate_neighbor(
         atoms=atoms,
@@ -73,7 +73,7 @@ if __name__ == "__main__":
     print("SiO2 successful")
 
     # === FCC Cu 3x3x3 结构 ===
-    atoms_cu = bulk('Cu', 'fcc', a=3.615) * (3, 3, 3)
+    atoms_cu = bulk('Si', 'fcc', a=3.615) * (3, 3, 3)
     atoms_cu.write('atoms_cu_3x3x3.xyz')
     main(atoms=atoms_cu)
     print("FCC Cu successful")

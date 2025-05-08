@@ -73,7 +73,7 @@ class BPMlp(FieldModel):
             Ei_itype = fitting_net.forward(iifeat)
             Ei[mask_itype] = Ei_itype.reshape(-1, 1)
         Etot = torch.sum(Ei, dim=1)
-        return {'Etot': Etot, 'Ei':Ei}
+        return {'Etot': Etot, 'Ei': Ei}
 
     @staticmethod
     def scale(type_map_all: List[int],
@@ -183,7 +183,7 @@ class BPMlp(FieldModel):
 
         for i, itype in enumerate(include_element_list):
             indices = type_map.index(itype)
-            mask_g = (neighbor_indices == itype).unsqueeze(-1)
+            mask_g = (neighbor_types == itype).unsqueeze(-1)
             Gi[:, :,  n_basis * indices:n_basis * (indices + 1)] = torch.sum(g_rij * mask_g, dim=2)
 
         return Gi
@@ -219,7 +219,7 @@ class BPMlp(FieldModel):
 
         for i, itype in enumerate(include_element_list):
             i_indices = type_map.index(itype)
-            mask_i = (neighbor_indices == itype).unsqueeze(-1)
+            mask_i = (neighbor_types == itype).unsqueeze(-1)
             gij = grij * mask_i
             # gij [batch, n_atoms, n_basis, max_neighbor, 1]
             gij = gij.transpose(2, 3).unsqueeze(-1)
@@ -230,7 +230,7 @@ class BPMlp(FieldModel):
             for j, jtype in enumerate(include_element_list):
                 j_indices = type_map.index(jtype)
                 indices = i_indices * len(type_map) + j_indices
-                mask_j = (neighbor_indices == itype).unsqueeze(-1)
+                mask_j = (neighbor_types == itype).unsqueeze(-1)
                 gik = grij * mask_j
                 # gik [batch, n_atoms, n_basis, 1, max_neighbor]
                 gik = gik.transpose(2, 3).unsqueeze(-2)
@@ -278,7 +278,7 @@ class BPMlp(FieldModel):
         Gi = torch.zeros(batch, n_atoms, int(n_basis * len(type_map) ** 2), dtype=dtype, device=device)
         for i, itype in enumerate(include_element_list):
             i_indices = type_map.index(itype)
-            mask_i = (neighbor_indices == itype).unsqueeze(-1)
+            mask_i = (neighbor_types == itype).unsqueeze(-1)
             gij = grij * mask_i
             # gij [batch, n_atoms, n_basis, max_neighbor, 1]
             gij = gij.transpose(2, 3).unsqueeze(-1)
@@ -290,7 +290,7 @@ class BPMlp(FieldModel):
             for j, jtype in enumerate(include_element_list):
                 j_indices = type_map.index(jtype)
                 indices = i_indices * len(type_map) + j_indices
-                mask_j = (neighbor_indices == itype).unsqueeze(-1)
+                mask_j = (neighbor_types == itype).unsqueeze(-1)
                 gik = grij * mask_j
                 # gik [batch, n_atoms, n_basis, 1, max_neighbor]
                 gik = gik.transpose(2, 3).unsqueeze(-2)
