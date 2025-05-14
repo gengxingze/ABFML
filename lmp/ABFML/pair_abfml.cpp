@@ -183,7 +183,7 @@ void PairABFML::coeff(int narg, char** arg) {
         }
 
     cutoff = model.attr("cutoff").toDouble();
-    auto neighbor_model = model.attr("neighbor");
+    auto neighbor_attr = model.attr("neighbor");
     auto type_map_model = model.attr("type_map").toList();
 
     if (atom->ntypes > narg - 2) error->all(FLERR, "Element mapping not set");
@@ -198,26 +198,26 @@ void PairABFML::coeff(int narg, char** arg) {
         }
     }
 
-        if (std::holds_alternative<int>(neighbor_model)) {
+        if (neighbor_attr.isInt()) {
         // 如果是整型，所有元素共用一个 max_neighbor 值
-        max_neighbor = std::get<int>(neighbor_model);
+        max_neighbor = neighbor_attr.toInt();
         std::cout << "Using uniform neighbor count: max_neighbor = " << max_neighbor << std::endl;
         }
         else {
         // 否则按元素类型查找最近邻个数
-        auto model_map = std::get<std::map<int, int>>(neighbor_model);
+        c10::Dict<torch::IValue, torch::IValue> neighbor_dict = neighbor_attr.toGenericDict();
         std::vector<int> type_map_temp = type_map;
         std::sort(type_map_temp.begin(), type_map_temp.end());
         for (int elem : type_map_temp) {
-            if (model_map.find(elem) != model_map.end()) {
-                int n = model_map[elem];
-                neighbor_map.push_back(elem);
-                max_neighbor += n;
-                neighbor_width.push_back(max_neighbor);
-            } else {
-                std::cerr << "Error: No neighbor setting for element " << elem << std::endl;
-            }
+        if (neighbor_dict.contains(elem)) {
+            int64_t n = neighbor_dict.at(elem).toInt();
+            neighbor_map.push_back(elem);
+            max_neighbor += n;
+            neighbor_width.push_back(max_neighbor);
+        } else {
+            std::cerr << "Error: No neighbor setting for element " << elem << std::endl;
         }
+    }
 
     if (count == 0) error->all(FLERR, "Incorrect args for pair coefficients");
 }

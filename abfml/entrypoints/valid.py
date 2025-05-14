@@ -26,7 +26,7 @@ def valid_mlff(
     if ".ckpt" in model:
         logger.info(f"| Because file {model} has the suffix ckpt,")
         logger.info(f"| we will attempt to read the model from a checkpoint-type file.")
-        model_class = torch.load(model)["model"]
+        model_class = torch.load(model, weights_only=False)["model"]
     else:
         logger.info(f"| We will attempt to read the model from a jit_script-type file {model}.")
         model_class = torch.jit.load(model)
