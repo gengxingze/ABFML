@@ -155,8 +155,8 @@ void PairABFML::settings(int narg, char** arg) {
             model.to(device);
             model.eval();
             if (comm->me == 0) {
-                utils::logmesg(lmp, "Load model successful!----> %s", model_file);
-                utils::logmesg(lmp, "INFO IN ABFML-MODEL---->>");
+                utils::logmesg(lmp, "Load model successful!----> %s \n", model_file);
+                utils::logmesg(lmp, "INFO IN ABFML-MODEL---->> \n");
             }
         } catch (const c10::Error& e) {
             std::cerr << "Failed to load TorchScript model: " << e.msg() << std::endl;
