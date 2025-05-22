@@ -240,6 +240,7 @@ class BPMlp(FieldModel):
         return Gi
 
     @staticmethod
+
     def sym_ang_w(type_map: List[int],
                   R_min: float,
                   R_max: float,
