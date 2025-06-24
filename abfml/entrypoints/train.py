@@ -57,7 +57,7 @@ def train_mlff(
     num_threads = torch.get_num_threads()
     num_worker = int(num_threads / 2)
     # torch.set_num_threads(1)
-    logger.info("num_threads : %d" % num_threads)
+    logger.info(f"num_threads : {num_threads}, device : {device}")
     torch.set_printoptions(precision=10)
     if param_class.DataSet.ratio is None:
         logger.info("+-------------------------------------- train data file ---------------------------------------+")
