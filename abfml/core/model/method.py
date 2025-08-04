@@ -26,13 +26,16 @@ class FieldModel(nn.Module, ABC):
             Cutoff radius for neighbor searching.
             Only atoms within this distance will be considered as neighbors.
 
-        neighbor : Union[Dict[int, int],int]
+        neighbor : Union[Dict[int, int], int]
             Maximum number of neighbors for each atom type (or a global value).
             Used to define tensor sizes or guide model input structure.
 
-        Example
-        -------
-        model = FieldModel(type_map=[0, 1], cutoff=6.0, neighbor=[1:100])
+        Examples
+        --------
+        ```python
+        # Create a model with two element types, cutoff radius 6.0,
+        # and maximum 100 neighbors for element type 1.
+        model = FieldModel(type_map=[0, 1], cutoff=6.0, neighbor={1: 100})
         """
         super(FieldModel, self).__init__()
         self.type_map = type_map

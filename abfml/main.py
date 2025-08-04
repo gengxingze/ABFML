@@ -11,7 +11,7 @@ def main():
 
 if __name__ == '__main__':
     print("__main__")
-    train_mlff(INPUT=r"D:\Work\PyCharm\ABFML\abfml\input.json", init_model=None, restart=None)
+    train_mlff(INPUT=r"D:\Work\PyCharm\ABFML\example\BPMlp\input.json", init_model=None, restart=None)
     # valid_mlff(model=r"D:\work\Pycharm\mlff\test\checkpoint_final.ckpt", numb_test=100,plot=False,
     #            shuffle=False,
     #            datafile=r"D:\work\Pycharm\mlff\test\data\Cu_128_1200_vasprun.xml")

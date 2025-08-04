@@ -1,2 +1,2 @@
    Epoch       T_RMSE_Loss       V_RMSE_Loss      T_RMSE_E_tot      V_RMSE_E_tot      T_RMSE_Force      V_RMSE_Force      Total_Time(s)
-       1       3.44887e-01       3.86718e-01       1.91537e-01       8.68599e-02       1.53350e-01       8.72904e-02           61.31
+       1       2.48638e-01       3.83041e-01       1.04391e-01       7.70991e-02       1.44247e-01       8.21063e-02           21.68

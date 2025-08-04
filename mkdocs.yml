@@ -1,0 +1,68 @@
+site_name: ABFML
+site_description: "A machine learning force field framework based on PyTorch"
+site_url: https://gengxingze.github.io/ABFML/
+repo_url: https://github.com/gengxingze/ABFML
+repo_name: gengxingze/ABFML
+
+theme:
+  name: material
+  logo: assets/logo.png   # 你可以放自己的 logo
+  favicon: assets/favicon.png
+  features:
+    - navigation.tabs
+    - navigation.expand
+    - navigation.instant
+    - navigation.top
+    - content.code.copy
+    - content.code.annotate
+    - toc.integrate
+    - search.suggest
+    - search.highlight
+
+nav:
+  - Home: index.md
+  - Tutorial: tutorials/index.md
+  - Document:
+      - install: install.md
+      - 命令行工具: cli.md
+      - FAQ: faq.md
+      - 开发者文档: developer.md
+  - API参考:
+      - core:
+          - Loss: api/core/loss.md
+          - Model:
+              - method: api/core/model/method.md
+      - Data: api/data.md
+      - Entrypoints: api/entrypoints.md
+      - Train: api/train.md
+      - Utils: api/utils.md
+  - Citation: citation.md
+
+plugins:
+  - search:
+      lang: zh
+  - mkdocstrings:
+      handlers:
+        python:
+          options:
+            docstring_style: google
+            show_source: true
+
+markdown_extensions:
+  - admonition
+  - codehilite
+  - footnotes
+  - toc:
+      permalink: true
+  - pymdownx.superfences
+  - pymdownx.details
+  - pymdownx.highlight
+  - pymdownx.inlinehilite
+  - pymdownx.magiclink
+  - pymdownx.keys
+
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/gengxingze/ABFML
+  generator: false
