@@ -24,10 +24,9 @@ nav:
   - Tutorial: tutorials/index.md
   - Document:
       - install: install.md
-      - 命令行工具: cli.md
+      - Command-line Interface: cli.md
       - FAQ: faq.md
-      - 开发者文档: developer.md
-  - API参考:
+  - API:
       - core:
           - Loss: api/core/loss.md
           - Model:

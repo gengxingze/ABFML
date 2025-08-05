@@ -9,7 +9,6 @@ It integrates modern deep learning frameworks and molecular dynamics engines, en
 ## Features
 - Rapid construction of MLFF models based on physical descriptors
 - Support for large-scale molecular dynamics via **LAMMPS** and **ASE**
-- Efficient hyperparameter screening and optimization
 - Modular design for easy extension and research customization
 
 ---

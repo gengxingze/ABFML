@@ -35,7 +35,7 @@ class FieldModel(nn.Module, ABC):
         ```python
         # Create a model with two element types, cutoff radius 6.0,
         # and maximum 100 neighbors for element type 1.
-        model = FieldModel(type_map=[0, 1], cutoff=6.0, neighbor={1: 100})
+        model = FieldModel(type_map=[1], cutoff=6.0, neighbor=100)
         """
         super(FieldModel, self).__init__()
         self.type_map = type_map
