@@ -91,6 +91,11 @@
     <label class="md-overlay" for="__drawer"></label>
     <div data-md-component="skip">
       
+        
+        <a href="#custom-model-training" class="md-skip">
+          Skip to content
+        </a>
+      
     </div>
     <div data-md-component="announce">
       
@@ -566,6 +571,21 @@
       <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
       
       
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    Custom Model
+    
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
       
       <a href="./" class="md-nav__link md-nav__link--active">
         
@@ -578,6 +598,61 @@
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#1-define-a-custom-model" class="md-nav__link">
+    <span class="md-ellipsis">
+      1. Define a Custom Model
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#2-example-parameter-configuration-inputjson" class="md-nav__link">
+    <span class="md-ellipsis">
+      2. Example Parameter Configuration (input.json)
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#3-run-the-training" class="md-nav__link">
+    <span class="md-ellipsis">
+      3. Run the Training
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#4-model-validation" class="md-nav__link">
+    <span class="md-ellipsis">
+      4. Model Validation
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
       
     </li>
   
@@ -764,7 +839,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../faq.md" class="md-nav__link">
+      <a href="../../faq/" class="md-nav__link">
         
   
   
@@ -860,6 +935,52 @@
   
   
     <li class="md-nav__item">
+      <a href="../../api/math_fun/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Math_fun
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/to_graph/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    To_graph
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../api/utils/" class="md-nav__link">
         
   
@@ -921,9 +1042,71 @@
 
 
 
-  <h1>Custom Model</h1>
+<h1 id="custom-model-training">Custom Model Training<a class="headerlink" href="#custom-model-training" title="Permanent link">&para;</a></h1>
+<p>This tutorial demonstrates how to build and train a <strong>custom force field model</strong> in ABFML.<br />
+It illustrates how users can implement their own potential form by subclassing <code>FieldModel</code><br />
+and integrating it into ABFML’s modular interface.</p>
+<hr />
+<h2 id="1-define-a-custom-model">1. Define a Custom Model<a class="headerlink" href="#1-define-a-custom-model" title="Permanent link">&para;</a></h2>
+<p>To build a new model, specify <code>"name": "user_defined"</code> in your parameter file.<br />
+You should also define the model location <code>"model_path"</code> and the required descriptor settings.<br />
+If normalization is needed, include the normalization class name as well.</p>
+<p>Here’s a minimal working example showing how to define a user model:</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">abfml</span><span class="w"> </span><span class="kn">import</span> <span class="n">FieldModel</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">List</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Any</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
 
 
+<span class="k">class</span><span class="w"> </span><span class="nc">New</span><span class="p">(</span><span class="n">FieldModel</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">type_map</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span> <span class="n">cutoff</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">neighbor</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">config</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">New</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">type_map</span><span class="o">=</span><span class="n">type_map</span><span class="p">,</span> <span class="n">cutoff</span><span class="o">=</span><span class="n">cutoff</span><span class="p">,</span> <span class="n">neighbor</span><span class="o">=</span><span class="n">neighbor</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">field</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">element_map</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">Zi</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">Zij</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
+              <span class="n">Nij</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">Rij</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">n_ghost</span><span class="p">:</span> <span class="nb">int</span><span class="p">):</span>
+        <span class="c1"># Simple example: quadratic interaction</span>
+        <span class="n">Ei</span> <span class="o">=</span> <span class="n">Zij</span> <span class="o">**</span> <span class="mi">2</span>
+        <span class="n">Etot</span> <span class="o">=</span> <span class="n">Ei</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">Etot</span><span class="p">,</span> <span class="n">Ei</span>
+</code></pre></div>
+<div class="admonition tip">
+<p class="admonition-title">💡 Tip</p>
+<p>All custom models should inherit from <code>FieldModel</code> and implement the <code>field()</code> function.<br />
+The <code>field()</code> method defines how total and per-atom energies are computed from descriptor tensors.</p>
+</div>
+<hr />
+<h2 id="2-example-parameter-configuration-inputjson">2. Example Parameter Configuration (<code>input.json</code>)<a class="headerlink" href="#2-example-parameter-configuration-inputjson" title="Permanent link">&para;</a></h2>
+<p>Below is a minimal configuration file example to run your custom model:</p>
+<div class="highlight"><pre><span></span><code><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;user_defined&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;model_path&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;./models/new_model.pt&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;descriptor&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;type_map&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="mi">29</span><span class="p">],</span>
+<span class="w">    </span><span class="nt">&quot;neighbor&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="mi">100</span><span class="p">],</span>
+<span class="w">    </span><span class="nt">&quot;cutoff&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">6.0</span>
+<span class="w">  </span><span class="p">},</span>
+<span class="w">  </span><span class="nt">&quot;normalize&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;None&quot;</span>
+<span class="w">  </span><span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div>
+<hr />
+<h2 id="3-run-the-training">3. Run the Training<a class="headerlink" href="#3-run-the-training" title="Permanent link">&para;</a></h2>
+<p>You can train your custom model using ABFML’s command-line interface:</p>
+<div class="highlight"><pre><span></span><code>abfml<span class="w"> </span>train<span class="w"> </span>--input<span class="w"> </span>input.json<span class="w"> </span>--data<span class="w"> </span>./data/train_dataset.npz
+</code></pre></div>
+<p>The training process will automatically detect the <code>"user_defined"</code> type<br />
+and use your custom model implementation.</p>
+<hr />
+<h2 id="4-model-validation">4. Model Validation<a class="headerlink" href="#4-model-validation" title="Permanent link">&para;</a></h2>
+<p>Once trained, quickly validate the model’s <strong>symmetry</strong> and <strong>energy conservation</strong> using:</p>
+<div class="highlight"><pre><span></span><code>abfml<span class="w"> </span>check<span class="w"> </span>--model<span class="w"> </span>./models/new_model.pt
+</code></pre></div>
+<p>This command performs automatic checks to ensure your model’s physical correctness.</p>
+<hr />
+<p>💡 <strong>Tip</strong><br />
+You can find this example under the<br />
+<a href="https://github.com/gengxingze/ABFML/tree/main/examples/custom_model"><code>examples/custom_model/</code></a><br />
+directory in the ABFML GitHub repository.</p>
 
 
 
