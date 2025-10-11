@@ -21,6 +21,7 @@ def plot_loss_curve(file_name):
 
     # List of RMSE metrics to be plotted
     label_list = ["Loss", "E_tot", "Force", "Ei", "Virial"]
+    unit = {"Loss":None, "E_tot": "eV/atom", "Force": "eV/Å", "Ei": "eV", "Virial": "eV"}
 
     for label in label_list:
         train_key = f"T_RMSE_{label}"
@@ -38,9 +39,9 @@ def plot_loss_curve(file_name):
                     markersize=4)
 
             # Set title and axis labels
-            ax.set_title(f"{label} RMSE vs Epoch", fontsize=18)
+            ax.set_title(f"Convergence curve of {label}", fontsize=18)
             ax.set_xlabel("Epoch", fontsize=18)
-            ax.set_ylabel(f"{label} RMSE", fontsize=18)
+            ax.set_ylabel(f"{label} RMSE ({unit[label]})", fontsize=18)
             ax.tick_params(axis='both', labelsize=16)
 
             # Add grid lines with transparency
@@ -71,9 +72,9 @@ def plot_scatter(dft, predict, predict_key, rmse, r2, unit):
              fontsize=18, verticalalignment='top', bbox=dict(facecolor='white', alpha=0.8))
 
     # Set title, axis labels, and grid
-    plt.title(f'{predict_key}: DFT vs Predict', fontsize=22)
-    plt.xlabel(f'{predict_key}$_{{DFT}}$', fontsize=20)
-    plt.ylabel(f'{predict_key}$_{{Predict}}$', fontsize=20)
+    # plt.title(f'{predict_key}: DFT vs Predict', fontsize=22)
+    plt.xlabel(f'{predict_key}-DFT', fontsize=20)
+    plt.ylabel(f'{predict_key}-Predict', fontsize=20)
     plt.xlim(data_min, data_max)
     plt.ylim(data_min, data_max)
     plt.tick_params(axis='both', labelsize=18)

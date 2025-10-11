@@ -9,34 +9,43 @@ from abfml.param.param import Param
 
 
 class FieldModel(nn.Module, ABC):
+    """
+        Abstract base class for machine learning force field models.
+
+        FieldModel provides a standardized interface for implementing custom force field
+        models within the ABFML framework. It handles the automatic computation of forces
+        and virial tensors through automatic differentiation, allowing developers to focus
+        on implementing the energy calculation logic.
+
+        The class manages the complete physics pipeline:
+        - Neighbor list processing
+        - Energy computation (via the abstract `field` method)
+        - Automatic force derivation using PyTorch autograd
+        - Virial tensor calculation
+
+        Subclasses must implement the `field` method to define the specific energy
+        calculation for their force field model.
+
+        Attributes
+        ----------
+        - type_map : List[int]
+            Mapping of atomic species to model indices. Each unique element type
+            should have a corresponding integer in this list.
+
+        - neighbor : Union[Dict[int, int], int]
+            Maximum number of neighbors per atom. Can be either:
+            - int: Global maximum for all atom types
+            - Dict[int, int]: Type-specific maximums {type_id: max_neighbors}
+
+        - cutoff : float
+            Cutoff radius (in Angstroms) for neighbor search. Atoms beyond this
+            distance are not considered neighbors.
+    """
     def __init__(self,
                  type_map: List[int],
                  cutoff: float,
                  neighbor: Union[Dict[int, int],int]):
-        """
-        Base class for field-based machine learning potential models.
 
-        Parameters
-        ----------
-        type_map : List[int]
-            A list mapping atomic species to integer indices used in the model.
-            For example, [0, 1, 2] might represent three different element types.
-
-        cutoff : float
-            Cutoff radius for neighbor searching.
-            Only atoms within this distance will be considered as neighbors.
-
-        neighbor : Union[Dict[int, int], int]
-            Maximum number of neighbors for each atom type (or a global value).
-            Used to define tensor sizes or guide model input structure.
-
-        Examples
-        --------
-        ```python
-        # Create a model with two element types, cutoff radius 6.0,
-        # and maximum 100 neighbors for element type 1.
-        model = FieldModel(type_map=[1], cutoff=6.0, neighbor=100)
-        """
         super(FieldModel, self).__init__()
         self.type_map = type_map
         self.neighbor = neighbor
@@ -49,25 +58,7 @@ class FieldModel(nn.Module, ABC):
                 neighbor_types: torch.Tensor,
                 neighbor_vectors: torch.Tensor,
                 n_ghost: int) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
-        """
-        Main forward pass computing physical quantities
-        Args:
-            element_map: Atomic numbers mapped to indices [batch, n_atoms]
-            central_atoms: Central atom indices [batch, n_atoms]
-            neighbor_indices: Neighbor atom indices [batch, n_atoms, max_nbr]
-            neighbor_types: Neighbor atom types [batch, n_atoms, max_nbr]
-            neighbor_vectors: Relative position vectors [batch, n_atoms, max_nbr, 4]
-                              (distance, dx, dy, dz)
-            n_ghost: Number of ghost atoms in the system
 
-        Returns:
-            Tuple containing:
-            - Etot [batch, 1]
-            - Ei [batch, n_atoms, 1]
-            - force [batch, n_atoms, 3]
-            - virial tensor [batch, 9]
-            - atomic_virial [batch, n_atoms, 9]
-        """
         # Extract dimensions and tensor properties
         batch, n_atoms, max_neighbor, _ = neighbor_vectors.shape
         device, dtype = neighbor_vectors.device, neighbor_vectors.dtype
@@ -156,47 +147,67 @@ class FieldModel(nn.Module, ABC):
               neighbor_vectors: torch.Tensor,
               n_ghost: int) -> Dict[str, torch.Tensor]:
         """
-        Abstract method to be implemented by subclasses. This method defines the core
-        field calculation of the model, which computes atom-wise energies and optionally
-        forces and virial tensors based on atomic environments.
+        Compute atomic energies and optionally forces for the force field model.
+
+        This abstract method must be implemented by all subclasses. It defines the
+        core physics of your force field - how atomic environments are converted
+        into energies (and optionally forces/virials).
 
         Parameters
         ----------
         element_map : torch.Tensor
-            Tensor of shape [batch, n_atoms], indicating the atomic species (element index)
-            for each atom in the batch.
+            Atomic numbers for each atom, shape [batch_size, n_atoms].
+            Use this to apply element-specific parameters in your model.
 
         central_atoms : torch.Tensor
-            Tensor of shape [batch, n_atoms], representing the type of central atoms.
+            Type indices (not atomic numbers) for central atoms, shape [batch_size, n_atoms].
+            Indices into self.type_map. Use for type-dependent calculations.
 
         neighbor_indices : torch.Tensor
-            Tensor of shape [batch, n_atoms, max_nbr], providing the indices of neighboring
-            atoms for each central atom.
+            Neighbor atom indices, shape [batch_size, n_atoms, max_neighbors].
+            Value -1 indicates padding (no real neighbor). Use with torch.gather
+            to collect neighbor properties.
 
         neighbor_types : torch.Tensor
-            Tensor of shape [batch, n_atoms, max_nbr], indicating the atomic species
-            of neighboring atoms.
+            Neighbor type indices, shape [batch_size, n_atoms, max_neighbors].
+            Corresponds to neighbor_indices, giving type of each neighbor.
 
         neighbor_vectors : torch.Tensor
-            Tensor of shape [batch, n_atoms, max_nbr, 4], where the last dimension represents
-            (distance, dx, dy, dz), i.e., the norm and vector components of the relative positions.
+            Relative positions, shape [batch_size, n_atoms, max_neighbors, 4].
+            Format: [distance, dx, dy, dz]
+            - distance: ||r_j - r_i|| in Angstroms
+            - dx, dy, dz: components of r_j - r_i vector
+            Use distance for radial functions, components for angular terms.
 
         n_ghost : int
-            Number of ghost atoms (used to pad or augment neighbor lists, typically for parallelism).
+            Number of ghost atoms (periodic images) in the system.
+            Usually can be ignored unless doing specialized handling.
 
         Returns
         -------
         Dict[str, torch.Tensor]
-            A dictionary containing the computed physical quantities:
-            - 'Etot': Total energy, shape [batch, 1].
-            - 'Ei': Atomic energy per atom, shape [batch, n_atoms, 1].
-            - Optional: 'Force': Force on each atom, shape [batch, n_atoms, 3].
-            - Optional: 'virial': Virial tensor, shape [batch, 9].
-            - Optional: 'atomic_virial': virial Force on each atom, shape [batch, n_atoms, 9].
+            Dictionary with the following keys:
 
-        Note
-        ----
-        This method must be implemented in subclasses of `FieldModel`.
+            **Required**:
+            - 'Etot' : torch.Tensor, shape [batch_size, 1]
+                Total energy for each configuration in the batch.
+                Must be provided and have correct shape.
+
+            - 'Ei' : torch.Tensor, shape [batch_size, n_atoms, 1]
+                Per-atom energy contributions. Should sum to Etot.
+                Must be provided and have correct shape.
+
+            **Optional** (provide only if computing analytically):
+
+            - 'Force' : torch.Tensor, shape [batch_size, n_atoms, 3]
+                Atomic forces F = -dE/dr in Cartesian coordinates.
+                If not provided, computed automatically via autograd.
+
+            - 'virial' : torch.Tensor, shape [batch_size, 3, 3]
+                Virial stress tensor. Only relevant if providing Force.
+
+            - 'atomic_virial' : torch.Tensor, shape [batch_size, n_atoms, 9]
+                Per-atom virial contributions (flattened 3x3 tensors).
         """
         return {'Etot': torch.tensor([0.0])}
 

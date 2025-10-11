@@ -1,23 +1,11 @@
 # Citation
 
-If you use **ABFML** in your research, please cite the following paper:
+1. If you use **ABFML** in your research, please cite the following paper:
+    - Xingze Geng, Jianing Gu, Gaowu Qin, Lin-Wang Wang,and Xiangying Meng. “ABFML: A problem-oriented package for 
+      rapidly creating, screening, and optimizing new machine learning force fields.”** J. Chem. Phys.* 162, 052502 (2025)
 
-> Xingze Geng, Jianing Gu, Gaowu Qin, Lin-Wang Wang, Xiangying Meng.  
-> **ABFML: A problem-oriented package for rapidly creating, screening, and optimizing new machine learning force fields.**  
-> *Journal of Chemical Physics* **162**, 052502 (2025).  
-> [https://doi.org/10.1063/5.0247559](https://doi.org/10.1063/5.0247559)
+2. If you use the **Mg-Cu alloy dataset** in your research, please also cite:
+    - Xingze Geng and Lin-Wang Wang and Xiangying Meng. “Exploring the strength-concentration relationship of MgCu bioalloys 
+      at low copper content using machine learning force fields.”** Comput. Mater. Sci.* 246, 113486 (2025)
 
-## BibTeX
-
-```bibtex
-@article{ABFML2025,
-  author  = {Xingze Geng and Jianing Gu and Gaowu Qin and Lin-Wang Wang and Xiangying Meng},
-  title   = {ABFML: A problem-oriented package for rapidly creating, screening, and optimizing new machine learning force fields},
-  journal = {Journal of Chemical Physics},
-  year    = {2025},
-  volume  = {162},
-  number  = {5},
-  pages   = {052502},
-  doi     = {10.1063/5.0247559}
-}
-```
+      

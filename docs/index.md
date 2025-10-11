@@ -1,9 +1,20 @@
 # ABFML
 
-**ABFML** (A problem-oriented package for rapidly creating, screening, and optimizing new machine learning force fields)  
-is a Python-based toolkit designed to streamline the development, training, and deployment of machine learning force fields (MLFFs).  
-It integrates modern deep learning frameworks and molecular dynamics engines, enabling efficient model construction and application.
+**ABFML** (Apply, Build, Fit Machine Learning force field) is a Python-based package designed to simplify the development, 
+screening, and tuning of new machine learning force field (MLFF) models.  
 
+Unlike tools that focus on a single model, ABFML is specifically intended for constructing and applying **new MLFF 
+models and descriptors**. Its modular design simplifies operations, facilitates integration of training and simulation, 
+and allows researchers to leverage existing MLFF models or develop and select models tailored to their specific problems.
+
+!!! important "Important"
+    The project **ABFML** is licensed under [GNU LGPLv3.0](https://www.gnu.org/licenses/lgpl-3.0.html).  
+    If you use this code in any future publications, please cite the following references:
+
+    - Xingze Geng, Jianing Gu, Gaowu Qin, Lin-Wang Wang,and Xiangying Meng. “ABFML: A problem-oriented package for rapidly 
+      creating, screening, and optimizing new machine learning force fields.”** J. Chem. Phys.* 162, 052502 (2025)     
+    
+    In addition, please see [this page](citation.md) for more citation details.
 ---
 
 ## Features
@@ -13,7 +24,7 @@ It integrates modern deep learning frameworks and molecular dynamics engines, en
 
 ---
 
-## Quickstart
+## Easy Install
 ```bash
 pip install abfml
 ```
@@ -24,15 +35,8 @@ For more details, check the [Installation Guide](install.md) and [Tutorials](tut
 ## Documentation
 - [Installation](install.md)
 - [Tutorials](tutorials/index.md)
-- [API Reference](cli.md)
+- [API Reference](api/method.md)
 - [Citation](citation.md)
 
 ---
 
-## Citation
-If you use ABFML in your research, please cite:
-
-> Xingze Geng, Jianing Gu, Gaowu Qin, Lin-Wang Wang, Xiangying Meng.  
-> **ABFML: A problem-oriented package for rapidly creating, screening, and optimizing new machine learning force fields.**  
-> *J. Chem. Phys.* 162, 052502 (2025).  
-> [https://doi.org/10.1063/5.0247559](https://doi.org/10.1063/5.0247559)

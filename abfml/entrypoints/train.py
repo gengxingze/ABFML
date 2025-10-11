@@ -289,12 +289,15 @@ def train_mlff(
             'optimizer': optimizer
         }, check_point_path)
     try:
-        jit_model = torch.jit.script(model)
+        # move model to CPU before scripting
+        model_cpu = model.to("cpu")
+        jit_model = torch.jit.script(model_cpu)
         jit_model.save(param_class.TrainSet.model_file)
     except Exception as e:
         torch.save(model, param_class.TrainSet.model_file+'.pth')
         logger.info(f"| Information: Failed to save the model via torchscript, will save the model by torch.save! \n"
                     f"               The model can't be loaded in lammps, but it can be used in ASE")
+        logger.warning(f"{e}")
     time_loop_end = time.time()
     logger.info(f"+------------------------------------------ End Loop ------------------------------------------+")
     logger.info(f"| Total training time:{time_loop_end - time_loop_start:8.2f}s, total training iters:{iters_step:>8d}")
