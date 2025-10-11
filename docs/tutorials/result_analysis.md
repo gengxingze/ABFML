@@ -42,7 +42,7 @@ Each point represents one structure (for energy) or one atomic component (for fo
 ```python
 ```
 
-![Parity Plot](images/parity_plot.png)
+![Parity Plot](../images/parity.png)
 
 ---
 
