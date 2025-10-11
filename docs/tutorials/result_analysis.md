@@ -62,7 +62,7 @@ A narrow, symmetric distribution centered around zero indicates a well-fitted an
 ```python
 ```
 
-![Error Distribution](images/error_distribution.png)
+![Error Distribution](../images/distribution.png)
 
 ---
 
