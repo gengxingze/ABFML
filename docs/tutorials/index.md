@@ -8,11 +8,11 @@ This tutorial section introduces **three representative examples**, each demonst
 
 Build and fit a simple Lennard–Jones-like potential using ABFML’s modular interface
 
-| Example                            | Description                                                                         |
-|------------------------------------| ----------------------------------------------------------------------------------- |
-| [Mg–Cu](mgcu.md)                   | Train a Deep Potential–Smooth Edition model for Mg–Cu alloy systems                 |
-| [FCC–Au](au.md)                    | Learn to train a Behler–Parrinello type neural network model for pure Cu            |
-| [Custom Model](train_lj_custom.md) | Build and fit a simple Lennard–Jones-like potential using ABFML’s modular interface |
+| Example                         | Description                                                                         |
+|---------------------------------| ----------------------------------------------------------------------------------- |
+| [Mg–Cu](mgcu.md)                | Train a Deep Potential–Smooth Edition model for Mg–Cu alloy systems                 |
+| [FCC–Au](au.md)                 | Learn to train a Behler–Parrinello type neural network model for pure Cu            |
+| [Custom Model](custom_model.md) | Build and fit a simple Lennard–Jones-like potential using ABFML’s modular interface |
 
 !!! tip "💡 Tip"
     All tutorials can be found in the `examples/` directory of the [ABFML GitHub repository](https://github.com/gengxingze/ABFML).  

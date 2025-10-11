@@ -76,6 +76,8 @@ nav:
       - FAQ: faq.md
   - API Reference:
       - Methods: api/method.md
+      - Math_fun: api/math_fun.md
+      - To_graph: api/to_graph.md
       - Utils: api/utils.md
   - Citation: citation.md
 
