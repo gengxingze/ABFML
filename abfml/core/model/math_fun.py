@@ -112,8 +112,7 @@ def derive_mechanics(
     grad_Ei: torch.Tensor,
     neighbor_vectors: torch.Tensor,
     neighbor_indices: torch.Tensor,
-    n_ghost: int
-) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+    n_ghost: int) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
     batch, n_atoms, max_neighbors = neighbor_indices.shape
     dtype, device = neighbor_vectors.dtype, neighbor_vectors.device
 

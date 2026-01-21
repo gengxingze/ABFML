@@ -1,7 +1,5 @@
 import torch
 import numpy as np
-from concurrent.futures import ProcessPoolExecutor
-from functools import partial
 from ase import Atoms, io
 from ase.neighborlist import NeighborList
 from typing import List, Optional, Union, Dict

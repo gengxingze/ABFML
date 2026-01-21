@@ -45,15 +45,13 @@ Below is a minimal configuration file example to run your custom model:
 ```json
 {
   "name": "user_defined",
-  "model_path": "./models/new_model.pt",
-  "descriptor": {
-    "type_map": [29],
-    "neighbor": [100],
-    "cutoff": 6.0
-  },
-  "normalize": {
-    "type": "None"
-  }
+          "model_path": "D:/Work/PyCharm/ABFML/example/new-MLFF/LJ-model.py",
+          "field_name": "LJ",
+          "normal_name": "LJNormal",
+          "descriptor" : {
+                         "epsilon": 1.0,
+                         "sigma": 1.5
+          }
 }
 ```
 
@@ -64,7 +62,7 @@ Below is a minimal configuration file example to run your custom model:
 You can train your custom model using ABFML’s command-line interface:
 
 ```bash
-abfml train --input input.json --data ./data/train_dataset.npz
+abfml train  input.json 
 ```
 
 The training process will automatically detect the `"user_defined"` type  
@@ -77,7 +75,7 @@ and use your custom model implementation.
 Once trained, quickly validate the model’s **symmetry** and **energy conservation** using:
 
 ```bash
-abfml check --model ./models/new_model.pt
+abfml check -m ./models/new_model.pt
 ```
 
 This command performs automatic checks to ensure your model’s physical correctness.
