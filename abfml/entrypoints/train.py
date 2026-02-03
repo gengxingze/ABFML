@@ -1,43 +1,18 @@
 import json
 import os
-import sys
-import importlib.util
 import time
 import torch
 import numpy as np
 from typing import Optional
 from torch.utils.data import ConcatDataset, DataLoader, Subset
 from abfml.param.param import Param
-from abfml.core.model.normal import DPNormal, FeatureNormal
+from abfml.core.model.builder import build_model
 from abfml.logger.loggers import Logger, log_data_info, log_logo
 from abfml.data.read_data import ReadData
 from abfml.train.trainer import train_loop, valid_loop
 from abfml.core.optimizer.optim_init import optim_init
 from abfml.core.optimizer.learn_rate import calc_lr_param
 import torch.multiprocessing
-
-
-def initialize_model(param_class, init_model: Optional[str], logger):
-    # 尝试加载已有模型
-    try:
-        model = torch.jit.load(init_model)
-        logger.info(f"Successfully loaded JIT model from {init_model}")
-    except RuntimeError:
-        try:
-            model = torch.load(init_model, map_location="cpu")
-            logger.info(f"Successfully loaded PyTorch model from {init_model}")
-        except Exception as e:
-            raise RuntimeError(f"Failed to load model using both torch.jit.load and torch.load: {e}")
-
-    # 检查模型基本参数是否匹配
-    if hasattr(model, 'cutoff') and model.cutoff != param_class.GlobalSet.cutoff:
-        raise ValueError(f"Cutoff mismatch: model={model.cutoff}, config={param_class.GlobalSet.cutoff}")
-    if hasattr(model, 'neighbor') and model.neighbor != param_class.GlobalSet.neighbor:
-        raise ValueError(f"Neighbor mismatch: model={model.neighbor}, config={param_class.GlobalSet.neighbor}")
-    if hasattr(model, 'type_map') and param_class.GlobalSet.type_map not in model.type_map:
-        raise ValueError(f"type_map mismatch: config type_map {param_class.GlobalSet.type_map} not in model")
-
-    return model
 
 
 def train_mlff(
@@ -99,90 +74,7 @@ def train_mlff(
     valid_data_load = DataLoader(valid_data, batch_size=param_class.TrainSet.batch_size,
                                  shuffle=False, num_workers=num_worker)
 
-    if init_model is not None:
-        model = initialize_model(param_class, init_model, logger)
-
-    elif restart is not None:
-        check_point_class = torch.load(restart)
-        model = check_point_class["model"]
-    else:
-        if param_class.model_name in ["dp_se_e2_a", "dp_se_e3", "dp_se_e2_r"]:
-            if param_class.model_name == "dp_se_e2_r":
-                from abfml.core.model.dpse import DpSe2r
-                energy_shift, std_mean = DPNormal(normal_data=train_data,
-                                                  param_class=param_class,
-                                                  normal_rate='auto',
-                                                  coordinate_matrix='r').normal_data
-                model_class = DpSe2r
-            elif param_class.model_name == "dp_se_e2_a":
-                from abfml.core.model.dpse import DpSe2a
-                energy_shift, std_mean = DPNormal(normal_data=train_data,
-                                                  param_class=param_class,
-                                                  normal_rate='auto',
-                                                  coordinate_matrix='a').normal_data
-                model_class = DpSe2a
-            else:
-                from abfml.core.model.dpse import DpSe3
-                energy_shift, std_mean = DPNormal(normal_data=train_data,
-                                                  param_class=param_class,
-                                                  normal_rate='auto',
-                                                  coordinate_matrix='a').normal_data
-                model_class = DpSe3
-
-            model = model_class(type_map=param_class.GlobalSet.type_map,
-                                cutoff=param_class.GlobalSet.cutoff,
-                                neighbor=param_class.GlobalSet.neighbor,
-                                fitting_config=param_class.DeepSe.fitting_config,
-                                embedding_config=param_class.DeepSe.embedding_config,
-                                energy_shift=energy_shift,
-                                std_mean=std_mean)
-
-        elif param_class.model_name == "BPMlp":
-            from abfml.core.model.bpmlp import BPMlp
-            energy_shift, std_mean = FeatureNormal(normal_data=train_data,
-                                                   param_class=param_class,
-                                                   normal_rate='auto',
-                                                   feature_name='BP').normal_data
-            model = BPMlp(type_map=param_class.GlobalSet.type_map,
-                          cutoff=param_class.GlobalSet.cutoff,
-                          neighbor=param_class.GlobalSet.neighbor,
-                          fit_config=param_class.BPDescriptor.fitting_config,
-                          bp_features_information=param_class.BPDescriptor.bp_features_information,
-                          bp_features_param=param_class.BPDescriptor.bp_features_param,
-                          energy_shift=energy_shift,
-                          std_mean=std_mean)
-
-        elif param_class.model_name == "NEP":
-            from abfml.core.model.nep import NEP
-            model = NEP(type_map=param_class.GlobalSet.type_map,
-                        cutoff=param_class.GlobalSet.cutoff,
-                        neighbor=param_class.GlobalSet.neighbor,
-                        fitting_config=param_class.NEPParam.fitting_config,
-                        feature_config=param_class.NEPParam.feature_config,
-                        energy_shift=[0,0],
-                        std_mean=[torch.tensor([0.0])])
-        elif param_class.model_name == "user_defined":
-            field_model_name = param_class.user_defined.field_name
-            model_path = param_class.user_defined.model_path
-            spec = importlib.util.spec_from_file_location(field_model_name, model_path)
-            module = importlib.util.module_from_spec(spec)
-            sys.modules[field_model_name] = module
-            spec.loader.exec_module(module)
-
-            field_model = getattr(module, field_model_name)
-            if param_class.user_defined.normal_name is not None:
-                normal_class = getattr(module, param_class.user_defined.normal_name)
-                normal_model = normal_class(normal_data=train_data, param_class=param_class, normal_rate="auto")
-                normal_data = normal_model.normal_data
-            else:
-                normal_data = None
-            model = field_model(type_map=param_class.GlobalSet.type_map,
-                                cutoff=param_class.GlobalSet.cutoff,
-                                neighbor=param_class.GlobalSet.neighbor,
-                                config=param_class.user_defined.config,
-                                normal=normal_data)
-        else:
-            raise Exception(f"If you define your own machine learning force field, use the name: user_defined")
+    model = build_model(param_class, train_data, init_model, restart, logger)
 
     if param_class.GlobalSet.dtype == "float32":
         model.to(torch.float32)

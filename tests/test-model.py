@@ -10,7 +10,6 @@ from torch_geometric.data import Data
 from torch_geometric.nn import GINEConv
 
 
-
 class TestModel(FieldModel):
     def __init__(self):
         super().__init__(type_map=[0], cutoff=6.0, neighbor=100)

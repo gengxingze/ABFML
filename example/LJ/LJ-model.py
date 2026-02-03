@@ -1,14 +1,9 @@
 import torch
 import torch.nn as nn
 from abfml.core.model.method import FieldModel, NormalModel
+from abfml.core.model.builder import register_model, BaseModelBuilder
 from typing import List, Tuple, Dict, Union, Any, Optional
 from abfml.param.param import Param
-
-
-@torch.jit.interface
-class ModuleInterface(torch.nn.Module):
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
-        pass
 
 
 class LJ(FieldModel):
@@ -16,8 +11,7 @@ class LJ(FieldModel):
                  type_map: List[int],
                  cutoff: float,
                  neighbor: List[int],
-                 config: Dict[str, Any],
-                 normal: Optional[List[torch.Tensor]]):
+                 config: Dict[str, Any]):
         super(LJ, self).__init__(type_map=type_map, cutoff=cutoff, neighbor=neighbor)
         self.config = config
         self.epsilon = nn.Parameter(torch.tensor([self.config['epsilon']]))
@@ -25,23 +19,23 @@ class LJ(FieldModel):
 
     def field(self,
               element_map: torch.Tensor,
-              Zi: torch.Tensor,
-              Zij: torch.Tensor,
-              Nij: torch.Tensor,
-              Rij: torch.Tensor,
-              n_ghost: int) -> Tuple[torch.Tensor, torch.Tensor]:
-        device = Rij.device
-        dtype = Rij.dtype
-        # Rij[batch, n_atom, neighbor, 4] 4->[rij, xij, yij, zij]
+              central_atoms: torch.Tensor,
+              neighbor_indices: torch.Tensor,
+              neighbor_types: torch.Tensor,
+              neighbor_vectors: torch.Tensor,
+              n_ghost: int) -> Dict[str, torch.Tensor]:
+        device = neighbor_vectors.device
+        dtype = neighbor_vectors.dtype
+        # neighbor_vectors[batch, n_atom, neighbor, 4] 4->[rij, xij, yij, zij]
         # 12/6 Lennard-Jones potential: E= 4*epsilon[(sigma/rij)^12 - (sigma/rij)^6]
-        rij = Rij[:, :, :, 0]
+        rij = neighbor_vectors[:, :, :, 0]
         mask_rij = (rij > 1e-5)
         rr = torch.zeros(rij.shape, dtype=dtype, device=device)
         rr[mask_rij] = 1 / rij[mask_rij]
         Eij = 0.5 * 4 * self.epsilon * ((self.sigma * rr) ** 12 - (self.sigma * rr) ** 6)
         Ei = torch.sum(Eij, dim=-1, keepdim=True)
         Etot = torch.sum(Ei, dim=1)
-        return Etot, Ei
+        return {'Etot': Etot, 'Ei': Ei}
 
 
 class LJNormal(NormalModel):
@@ -68,3 +62,18 @@ class LJNormal(NormalModel):
             pass
 
         return std_mean
+
+@register_model("LJ")
+class UserModelBuilder(BaseModelBuilder):
+    def build(self):
+        # energy_shift, std_mean = LJNormal(normal_data=self.normal_data, param_class=self.param)
+        return LJ(
+            type_map=self.param.GlobalSet.type_map,
+            cutoff=self.param.GlobalSet.cutoff,
+            neighbor=self.param.GlobalSet.neighbor,
+            config=self.param.user_defined.config
+        )
+
+
+
+

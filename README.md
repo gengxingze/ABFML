@@ -72,7 +72,7 @@ This is an example of a simple LJ potential, which can be found in example/new-m
 {
   "model_setting": {
           "name": "user_defined",
-          "model_path": "D:/Work/PyCharm/ABFML/example/new-MLFF/LJ-model.py",
+          "model_path": "D:/Work/PyCharm/ABFML/example/LJ/LJ-model.py",
           "field_name": "LJ",
           "normal_name": "LJNormal",
           "descriptor" : {
