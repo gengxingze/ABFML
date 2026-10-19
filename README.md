@@ -66,23 +66,50 @@ To integrate ABFML with LAMMPS, follow these steps:
 **Note**: Ensure your GCC compiler is version 9.0 or above, as older versions may not support.
 
 ## 3. Build a new model
-Build your own model input in the input file and specify the path to the model's py file,
-This is an example of a simple LJ potential, which can be found in example/new-model。
+ABFML now defines custom models through **registration**. You implement a `FieldModel`,
+then register a builder with `@register_model("ModelName")`. The training config only
+needs to point to the Python file and the registered name.
+
+Below is the **LJ example** from `example/LJ/LJ-model.py`:
+
+```python
+from abfml.core.model.method import FieldModel
+from abfml.core.model.builder import register_model, BaseModelBuilder
+
+
+class LJ(FieldModel):
+    ...
+
+
+@register_model("LJ")
+class UserModelBuilder(BaseModelBuilder):
+    def build(self):
+        return LJ(
+            type_map=self.param.GlobalSet.type_map,
+            cutoff=self.param.GlobalSet.cutoff,
+            neighbor=self.param.GlobalSet.neighbor,
+            config=self.param.user_defined.config
+        )
+```
+
+Then reference it in `input.json`:
+
 ```json
 {
   "model_setting": {
-          "name": "user_defined",
-          "model_path": "D:/Work/PyCharm/ABFML/example/LJ/LJ-model.py",
-          "field_name": "LJ",
-          "normal_name": "LJNormal",
-          "descriptor" : {
-                         "epsilon": 1.0,
-                         "sigma": 1.5
-          }
+    "name": "user_defined",
+    "model_path": "example/LJ/LJ-model.py",
+    "field_name": "LJ",
+    "normal_name": "LJNormal",
+    "descriptor": {
+      "epsilon": 1.0,
+      "sigma": 1.5
+    }
   }
 }
 ```
-Then you can use the relevant modules for training, validation and simulation
+
+Then you can use the relevant modules for training, validation, and simulation.
 
 ## 4. Run
 

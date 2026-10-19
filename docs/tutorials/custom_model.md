@@ -2,20 +2,21 @@
 
 This tutorial demonstrates how to build and train a **custom force field model** in ABFML.  
 It illustrates how users can implement their own potential form by subclassing `FieldModel`  
-and integrating it into ABFML’s modular interface.
+and integrating it into ABFML’s modular interface using the **registration** workflow.
 
 ---
 
 ## 1. Define a Custom Model
 
 To build a new model, specify `"name": "user_defined"` in your parameter file.  
-You should also define the model location `"model_path"` and the required descriptor settings.  
-If normalization is needed, include the normalization class name as well.
+You should also define the model location `"model_path"` and the registered model name  
+`"field_name"`. If normalization is needed, include the normalization class name as well.
 
 Here’s a minimal working example showing how to define a user model:
 
 ```python
-from abfml import FieldModel
+from abfml.core.model.method import FieldModel
+from abfml.core.model.builder import register_model, BaseModelBuilder
 from typing import List, Dict, Any
 import torch
 
@@ -23,6 +24,7 @@ import torch
 class New(FieldModel):
     def __init__(self, type_map: List[int], cutoff: float, neighbor: int, config: Dict[str, Any]):
         super(New, self).__init__(type_map=type_map, cutoff=cutoff, neighbor=neighbor)
+        self.config = config
 
     def field(self, element_map: torch.Tensor, Zi: torch.Tensor, Zij: torch.Tensor,
               Nij: torch.Tensor, Rij: torch.Tensor, n_ghost: int):
@@ -30,6 +32,17 @@ class New(FieldModel):
         Ei = Zij ** 2
         Etot = Ei.sum()
         return Etot, Ei
+
+
+@register_model("New")
+class UserModelBuilder(BaseModelBuilder):
+    def build(self):
+        return New(
+            type_map=self.param.GlobalSet.type_map,
+            cutoff=self.param.GlobalSet.cutoff,
+            neighbor=self.param.GlobalSet.neighbor,
+            config=self.param.user_defined.config
+        )
 ```
 
 !!! tip "💡 Tip"
@@ -45,13 +58,13 @@ Below is a minimal configuration file example to run your custom model:
 ```json
 {
   "name": "user_defined",
-          "model_path": "D:/Work/PyCharm/ABFML/example/LJ/LJ-model.py",
-          "field_name": "LJ",
-          "normal_name": "LJNormal",
-          "descriptor" : {
-                         "epsilon": 1.0,
-                         "sigma": 1.5
-          }
+  "model_path": "example/LJ/LJ-model.py",
+  "field_name": "LJ",
+  "normal_name": "LJNormal",
+  "descriptor": {
+    "epsilon": 1.0,
+    "sigma": 1.5
+  }
 }
 ```
 
@@ -66,7 +79,7 @@ abfml train  input.json
 ```
 
 The training process will automatically detect the `"user_defined"` type  
-and use your custom model implementation.
+and build the model from the class registered under `"field_name"`.
 
 ---
 
