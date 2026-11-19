@@ -11,7 +11,7 @@ hide:
 
 <p class="lead">面向物理问题，构建与验证机器学习力场。</p>
 
-<p class="description">从原子环境表示到自定义模型，从训练评估到原子模拟。ABFML 通过统一的数据与物理量接口，支持力场方法的开发、筛选和应用。</p>
+<p class="description">构建自己的描述符和力场模型，复用训练与验证流程，再通过统一接口接入 ASE 与 LAMMPS，将方法开发连接到原子模拟。</p>
 
 [快速开始](quickstart.md){ .md-button .md-button--primary }
 [探索模型与方法](custom.md){ .md-button }
@@ -42,15 +42,23 @@ hide:
 
 <div class="entry-card" markdown>
 
-## 连接原子模拟
+## 自定义模型用于模拟
 
-验证能量、力与 virial，衔接原子模拟和性质计算。
+内置与自定义模型共用 LAMMPS Pair 接口，无需逐模型编写 C++。
 
 [ASE →](ase-and-checks.md) · [LAMMPS →](lammps.md)
 
 </div>
 
 </div>
+
+## 一套 LAMMPS 接口，运行自定义力场
+
+**任意满足 ABFML 接口契约的自定义模型，都可以通过统一的 `pair_style abfml` 在 LAMMPS 中运行。** 模型实现并注册后，可复用训练、检查和保存流程，由 Python 桥接直接加载，无需为每个模型单独编写 C++ Pair 类，也无需 TorchScript 导出或 LibTorch 链接。
+
+当前接口支持 `local` 几何、`external` 近邻，并要求正确处理本地中心与 local/ghost 原子、提供模拟请求的物理量。多层消息传递等模型还需验证其依赖范围与 MPI 分域方式是否相容。
+
+[实现自定义模型 →](custom.md) · [编译与使用 LAMMPS 插件 →](lammps.md)
 
 ## 从局域环境到力场应用
 

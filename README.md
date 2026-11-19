@@ -6,16 +6,21 @@ ABFML 基于 PyTorch，帮助研究者围绕具体物理问题构建、筛选和
 框架通过统一的原子结构、局域环境和物理量接口，将自定义模型接入数据处理、训练评估与原子模拟流程。
 用户可以从内置模型开始，也可以实现自己的描述符、网络结构和物理属性预测模型。
 
+**自定义模型也能直接用于 LAMMPS：任意满足 ABFML 接口契约的模型，均可通过统一的 `pair_style abfml` 加载运行，无需为每个模型单独编写 C++ Pair 类，也无需导出 TorchScript 或链接 LibTorch。**
+
+当前 LAMMPS 接口要求模型使用 `local` 几何和 `external` 近邻，并正确处理本地中心、local/ghost 原子及所请求的物理量。详见 [LAMMPS 接口](lmp/ABFML/README.md)。
+
 项目相关论文：[ABFML: A problem-oriented package for rapidly creating, screening, and optimizing new machine learning force fields](https://doi.org/10.1063/5.0247559)。
 
 ## 框架特点
 
 - **支持自定义模型**：通过模型类、配置解析和显式注册接入扩展模块，复用训练、评估及适用的模拟接口。
+- **统一接入 LAMMPS**：内置模型与满足接口契约的自定义模型使用同一个 Python 桥接和 Pair 样式，模型开发后可继续用于分子动力学模拟。
 - **统一数据组织**：变长原子体系采用展平存储和 CSR 邻居图，按模型需要生成 Dense 视图。
 - **统一物理量契约**：集中定义标签的作用域、形状、单位和归一化方式；可微能量模型复用力与 virial 求导。
 - **完整训练与验证**：支持断点续训、微调、最佳模型选择，以及导数和对称性检查。
 - **自动分析结果**：训练结束生成损失与预测组图，打印最佳模型误差汇总和阶段耗时。
-- **连接原子模拟**：提供 ASE Calculator 和通过 Python 加载模型的 LAMMPS 插件。
+- **连接 ASE**：提供统一 Calculator，衔接单点计算、结构优化和原子模拟流程。
 
 ```mermaid
 flowchart LR
@@ -185,6 +190,8 @@ pair_style abfml examples/acsf/results/best.pt cpu
 pair_coeff * * Cu
 run 0
 ```
+
+同一插件也可加载自定义模型。例如，训练 `examples/harmonic/input.json` 后，将模型参数替换为 `examples/harmonic/results/model.pt` 即可。运行环境中需能导入对应的模型扩展模块。
 
 `pair_style abfml MODEL [DEVICE]` 指定模型路径及设备，默认 `cpu`、`eager`、`float32`。
 需要双精度或编译加速时，可写为 `pair_style abfml MODEL cpu mode compile precision float64`。
