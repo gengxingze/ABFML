@@ -200,38 +200,10 @@ run 0
 编译命令、完整输入及并行运行方式见 [LAMMPS 接口](lmp/ABFML/README.md)；
 内部单位、应力和 virial 约定见[标签说明](docs/labels.md)。
 
-## 项目结构与文档
+## 文档
 
+完整使用指南、模型开发及 ASE/LAMMPS 接口说明见[在线文档](https://gengxingze.github.io/ABFML/)。
 版本变化和迁移注意事项见[更新说明](CHANGELOG.md)。
-
-完整操作流程见[用户手册](docs/manual.md)，涵盖安装、数据准备、训练评估、自定义模型及 ASE/LAMMPS 使用。
-
-文档网站支持本地预览，在项目根目录执行：
-
-```bash
-python -m pip install -r requirements-docs.txt
-python -m mkdocs serve
-```
-
-随后打开 `http://127.0.0.1:8000/ABFML/`。静态构建使用 `python -m mkdocs build --strict`；
-GitHub Pages 发布设置见[本地预览与发布](docs/publishing.md)。
-
-| 目录 | 职责 |
-|---|---|
-| `abfml/core/` | 原子结构、模型契约、标签说明、邻居图与模型注册 |
-| `abfml/data/` | 结构读取、数据集与批次组装 |
-| `abfml/builtin/` | 内置模型、网络层与数学函数 |
-| `abfml/training/` | 损失、优化器、训练循环与 checkpoint |
-| `abfml/workflows/` | 训练、评估与物理检查流程 |
-| `abfml/interfaces/` | ASE 与 LAMMPS 的 Python 接口 |
-| `abfml/tools/` | 标签、邻居、描述符与误差分析 |
-| `lmp/ABFML/` | LAMMPS C++ 插件 |
-| `examples/`、`tests/`、`docs/` | 示例、测试与详细文档 |
-
-- [架构与数据流](docs/architecture.md) · [模型理论](docs/theory.md)
-- [数据与标签](docs/labels.md) · [训练工作流](docs/workflows.md)
-- [ASE 与物理检查](docs/ase-and-checks.md) · [新增模型](docs/model-extension.md)
-- [分析工具](abfml/tools/README.md) · [模型示例](examples/README.md)
 
 ## 引用
 
