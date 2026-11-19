@@ -1,141 +1,111 @@
-# ======================================================
-#  ABFML Documentation Configuration
-#  Powered by MkDocs + Material
-# ======================================================
-
 site_name: ABFML
-site_description: "A machine learning force field framework based on PyTorch"
-site_author: "ABFML Developers"
+site_description: 问题导向的机器学习力场开发框架
 site_url: https://gengxingze.github.io/ABFML/
-
 repo_url: https://github.com/gengxingze/ABFML
 repo_name: gengxingze/ABFML
-edit_uri: ""  # 可选：可留空以隐藏“Edit on GitHub”链接
-
-# ------------------------------------------------------
-#  Theme Configuration
-# ------------------------------------------------------
+edit_uri: ''
+copyright: ABFML Developers · GPL-3.0-only
+strict: true
+docs_dir: docs
+site_dir: site
+exclude_docs: |
+  hooks.py
+  __pycache__/
+hooks:
+  - docs/hooks.py
+watch:
+  - abfml/tools/README.md
+  - lmp/ABFML/README.md
+  - examples/README.md
+  - README.md
+  - LICENSE
 theme:
   name: material
-  logo: images/logo.png
-  favicon: images/favicon.png
-
+  language: zh
+  font: false
   features:
     - navigation.tabs
-    - navigation.expand
-    - navigation.instant
+    - navigation.sections
     - navigation.top
-    - navigation.tracking
-    - content.code.copy
-    - content.code.annotate
-    - content.action.edit
-    - toc.integrate
+    - navigation.footer
     - search.suggest
     - search.highlight
-    - header.autohide
-    - announce.dismiss
-
+    - content.code.copy
   palette:
-    # 亮色模式
     - scheme: default
-      primary: blue grey
-      accent: indigo
+      primary: custom
+      accent: custom
       toggle:
         icon: material/weather-night
-        name: Switch to dark mode
-    # 暗色模式
+        name: 切换深色模式
     - scheme: slate
-      primary: blue grey
-      accent: indigo
+      primary: custom
+      accent: custom
       toggle:
         icon: material/weather-sunny
-        name: Switch to light mode
-
-  font:
-    text: "Times New Roman"
-    code: "Fira Code"
-
-# ------------------------------------------------------
-#  Navigation
-# ------------------------------------------------------
+        name: 切换浅色模式
 nav:
-  - Home: index.md
-  - Tutorial:
-      - Overview: tutorials/index.md
-      - Train model:
-        - MgCu: tutorials/mgcu.md
-        - Fcc-Au: tutorials/fcc_au.md
-        - Custom Model: tutorials/custom_model.md
-      - Results Analysis: tutorials/result_analysis.md
-      - Running Simulations: tutorials/simulation.md
-      - Utilities and Tools: tutorials/tools.md
-
-  - Document:
-      - Installation: install.md
-      - Command-line Interface: cli.md
-      - FAQ: faq.md
-  - API Reference:
-      - Methods: api/method.md
-      - Math_fun: api/math_fun.md
-      - To_graph: api/to_graph.md
-      - Utils: api/utils.md
-  - Citation: citation.md
-
-# ------------------------------------------------------
-#  Plugins
-# ------------------------------------------------------
+  - 首页: index.md
+  - 入门指南:
+      - 安装环境: install.md
+      - 快速开始: quickstart.md
+      - 数据与近邻: data.md
+      - 标签与单位: labels.md
+      - 配置与训练: training.md
+      - 评估与误差: evaluation.md
+      - 物理一致性检查: checking.md
+      - 模型示例: examples.md
+  - 模型与方法:
+      - 自定义模型入门: custom.md
+      - ACSF: acsf.md
+      - DeepPot-SE: deepse.md
+      - NEP: nep.md
+      - 力与 Virial: mechanics.md
+  - 分析工具:
+      - 分布、描述符与预测图: tools.md
+  - 原子模拟:
+      - ASE 与物理检查: ase-and-checks.md
+      - LAMMPS 接口: lammps.md
+  - 开发参考:
+      - 模型注册与扩展契约: model-extension.md
+      - 架构与数据流: architecture.md
+      - 训练与模型文件: workflows.md
+      - 完整用户手册: manual.md
+      - 完整理论文档: theory.md
+      - 文档导览: overview.md
+      - 本地预览与发布: publishing.md
+      - 项目介绍与引用: project.md
+      - 许可证: license.md
 plugins:
   - search:
-      lang: zh
-  - mkdocstrings:
-      handlers:
-        python:
-          options:
-            docstring_style: google
-            show_source: true
-            heading_level: 2
-            inherited_members: true
-            merge_init_into_class: true
-
-# ------------------------------------------------------
-#  Markdown Extensions
-# ------------------------------------------------------
+      lang:
+        - zh
+        - en
 markdown_extensions:
   - admonition
-  - codehilite
+  - attr_list
+  - md_in_html
+  - tables
   - footnotes
   - toc:
       permalink: true
-  - pymdownx.superfences
+      slugify: !!python/name:markdown.extensions.toc.slugify_unicode
   - pymdownx.details
-  - pymdownx.highlight
+  - pymdownx.highlight:
+      anchor_linenums: true
   - pymdownx.inlinehilite
-  - pymdownx.magiclink
-  - pymdownx.keys
-  - pymdownx.tasklist:
-      custom_checkbox: true
-  - pymdownx.tabbed:
-      alternate_style: true
-
-# ------------------------------------------------------
-#  Extra Features
-# ------------------------------------------------------
-extra:
-  social:
-    - icon: fontawesome/brands/github
-      link: https://github.com/gengxingze/ABFML
-      name: View on GitHub
-  generator: True
-  analytics:  # 可选：放 Google Analytics ID
-    provider: google
-    property: G-XXXXXXXXXX
-  copyright: >
-    © 2025 <strong>ABFML Developers</strong>. All rights reserved.
-
-# ------------------------------------------------------
-#  Custom CSS/JS (Optional)
-# ------------------------------------------------------
+  - pymdownx.arithmatex:
+      generic: true
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
 extra_css:
-  - stylesheets/extra.css
+  - assets/styles.css
 extra_javascript:
-  - javascripts/extra.js
+  - assets/mathjax.js
+  - https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-mml-chtml.js
+validation:
+  links:
+    anchors: warn

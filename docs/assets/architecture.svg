@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="296" viewBox="0 0 960 296" role="img" aria-labelledby="title description">
+  <title id="title">ABFML 从原子环境到力场应用的统一流程</title>
+  <desc id="description">结构和参考标签通过统一原子与近邻组织输入内置或自定义模型，随后训练、评估，并连接 ASE 和 LAMMPS。能量对几何的求导产生力和 virial。</desc>
+  <defs><marker id="arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M1 1L7 4L1 7" fill="none" stroke="#71839a" stroke-width="1.4"/></marker></defs>
+  <rect width="960" height="296" rx="8" fill="#f7f9fc"/>
+  <g font-family="system-ui, Microsoft YaHei, sans-serif" font-size="15" text-anchor="middle">
+    <text x="480" y="33" fill="#607189" font-size="12" letter-spacing="2">ATOMIC ENVIRONMENTS · MODELS · APPLICATIONS</text>
+    <g fill="#fff" stroke="#c5d0df" stroke-width="1.2">
+      <rect x="24" y="66" width="178" height="89" rx="4"/>
+      <rect x="264" y="66" width="178" height="89" rx="4"/>
+      <rect x="504" y="66" width="178" height="89" rx="4"/>
+      <rect x="744" y="66" width="192" height="89" rx="4"/>
+    </g>
+    <g fill="#173b63" font-weight="600">
+      <text x="113" y="99">原子结构与标签</text><text x="353" y="99">统一局域环境</text>
+      <text x="593" y="99">内置 / 自定义模型</text><text x="840" y="99">训练与验证</text>
+    </g>
+    <g fill="#607189" font-size="13">
+      <text x="113" y="128">元素 · 坐标 · 物理量</text><text x="353" y="128">CSR 近邻 · 批次组织</text>
+      <text x="593" y="128">描述符 · 网络 · 能量</text><text x="840" y="128">监督误差 · 最佳模型</text>
+    </g>
+    <g stroke="#71839a" stroke-width="1.3" fill="none" marker-end="url(#arrow)">
+      <path d="M202 110H255"/><path d="M442 110H495"/><path d="M682 110H735"/>
+      <path d="M593 155V195"/><path d="M840 155V205H735"/>
+    </g>
+    <rect x="464" y="196" width="258" height="60" rx="4" fill="#eaf0f8" stroke="#b8c9dd"/>
+    <text x="593" y="220" fill="#173b63" font-size="14">一致性检查与独立评估</text>
+    <text x="593" y="241" fill="#607189" font-size="12">能量 · 力 · Virial · 目标性质</text>
+    <path d="M464 226H403" stroke="#71839a" stroke-width="1.3" marker-end="url(#arrow)"/>
+    <rect x="153" y="196" width="240" height="60" rx="4" fill="#fff" stroke="#c5d0df"/>
+    <text x="273" y="220" fill="#173b63" font-size="14">ASE / LAMMPS</text>
+    <text x="273" y="241" fill="#607189" font-size="12">原子模拟与性质验证</text>
+  </g>
+</svg>

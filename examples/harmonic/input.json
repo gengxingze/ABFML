@@ -1,0 +1,82 @@
+{
+    "config_version": 1,
+    "model_modules": [
+        "harmonic"
+    ],
+    "common": {
+        "elements": [
+            "Cu"
+        ],
+        "dtype": "float64",
+        "seed": 2026
+    },
+    "model": {
+        "name": "harmonic_pair",
+        "cutoff": 6.0,
+        "stiffness": 0.2,
+        "equilibrium": 2.56
+    },
+    "data": {
+        "files": [
+            "../data/test.extxyz"
+        ],
+        "format": "extxyz",
+        "split": {
+            "train": 0.8,
+            "valid": 0.2,
+            "seed": 2026
+        },
+        "loader": {
+            "batch_size": 2,
+            "shuffle": true,
+            "num_workers": 0,
+            "pin_memory": false,
+            "drop_last": false,
+            "neighbor_cache": "memory"
+        }
+    },
+    "training": {
+        "device": "cpu",
+        "epochs": 30,
+        "optimizer": {
+            "name": "adam",
+            "learning_rate": 0.001
+        },
+        "scheduler": {
+            "name": "exponential",
+            "start_lr": 0.001,
+            "limit_lr": 1e-08,
+            "decay_rate": 0.9,
+            "decay_step": 100
+        },
+        "gradient_clip_norm": 10.0,
+        "print_freq": 10
+    },
+    "loss": {
+        "metric": "mse",
+        "label": [
+            "energy",
+            "forces",
+            "virial"
+        ],
+        "start_weight": [
+            1.0,
+            100.0,
+            0.1
+        ],
+        "limit_weight": [
+            10.0,
+            10.0,
+            10.0
+        ]
+    },
+    "output": {
+        "dir": "./results",
+        "model_filename": "model.pt",
+        "checkpoint": {
+            "save_every": 10,
+            "keep_best": true,
+            "monitor": "valid_loss"
+        }
+    }
+}

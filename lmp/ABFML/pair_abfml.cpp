@@ -1,455 +1,326 @@
-#include <torch/script.h>
-#include <torch/torch.h>
-#include <iostream>
-#include <chrono>
-#include <cmath>
-#include <cstring>
-
+// ABFML Python runtime interface without TorchScript or LibTorch.
+// Syntax: pair_style abfml MODEL [DEVICE] [mode eager|compile] [precision float32|float64]
+// Each MPI rank owns a Bridge instance and evaluates only local-center energies.
 #include "pair_abfml.h"
-
 #include "atom.h"
 #include "comm.h"
-#include "error.h"
-#include "fix.h"
 #include "force.h"
-#include "memory.h"
+#include "update.h"
+#include "neighbor.h"
 #include "neigh_list.h"
 #include "neigh_request.h"
-#include "neighbor.h"
-#include "update.h"
-#include "domain.h"
+#include "error.h"
+#include "memory.h"
 
+#include <pybind11/embed.h>
+#include <pybind11/numpy.h>
+#include <cmath>
+#include <algorithm>
+#include <pybind11/stl.h>
+#include <exception>
+#include <stdexcept>
 
+namespace py = pybind11;
 using namespace LAMMPS_NS;
 
-/* ---------------------------------------------------------------------- */
+// Convert elements only when reading pair_coeff, outside the per-step computation.
+namespace {
 
-PairABFML::PairABFML(LAMMPS* lmp) : Pair(lmp)
+int atomic_number(const std::string &value)
 {
-    writedata = 1;
+    // Array indices are atomic numbers; index 0 is a placeholder, not a real element.
+    static const char *const symbols[] = {
+        "", "H", "He", "Li", "Be", "B", "C", "N", "O", "F", "Ne",
+        "Na", "Mg", "Al", "Si", "P", "S", "Cl", "Ar", "K", "Ca",
+        "Sc", "Ti", "V", "Cr", "Mn", "Fe", "Co", "Ni", "Cu", "Zn",
+        "Ga", "Ge", "As", "Se", "Br", "Kr", "Rb", "Sr", "Y", "Zr",
+        "Nb", "Mo", "Tc", "Ru", "Rh", "Pd", "Ag", "Cd", "In", "Sn",
+        "Sb", "Te", "I", "Xe", "Cs", "Ba", "La", "Ce", "Pr", "Nd",
+        "Pm", "Sm", "Eu", "Gd", "Tb", "Dy", "Ho", "Er", "Tm", "Yb",
+        "Lu", "Hf", "Ta", "W", "Re", "Os", "Ir", "Pt", "Au", "Hg",
+        "Tl", "Pb", "Bi", "Po", "At", "Rn", "Fr", "Ra", "Ac", "Th",
+        "Pa", "U", "Np", "Pu", "Am", "Cm", "Bk", "Cf", "Es", "Fm",
+        "Md", "No", "Lr", "Rf", "Db", "Sg", "Bh", "Hs", "Mt", "Ds",
+        "Rg", "Cn", "Nh", "Fl", "Mc", "Lv", "Ts", "Og"
+    };
+    for (int number = 1; number <= 118; ++number)
+        if (value == symbols[number]) return number;
+
+    throw std::invalid_argument("Invalid element '" + value +
+            "': use a case-sensitive element symbol such as Cu");
+}
+
+}  // namespace
+
+struct PairABFML::PythonState {
+    py::object function;
+};
+
+PairABFML::PairABFML(LAMMPS *lmp) : Pair(lmp)
+{
+    single_enable = 0;
+    restartinfo = 0;
+    // The model returns global virial directly; disable the unimplemented force-dot-position path.
+    no_virial_fdotr_compute = 1;
+    centroidstressflag = CENTROID_AVAIL;
 }
 
 PairABFML::~PairABFML()
 {
+    if (python && Py_IsInitialized()) {
+        py::gil_scoped_acquire gil;
+        python.reset();
+    }
     if (allocated) {
         memory->destroy(setflag);
         memory->destroy(cutsq);
     }
+    // Do not finalize Python in the Pair destructor; other pairs or the host may still use it.
+    // Keep self-created interpreters alive until process exit; hold the GIL when destroying Python objects.
 }
 
-/* ----------------------------------------------------------------------
-   allocate all arrays
-------------------------------------------------------------------------- */
-
+// Allocate coefficient flags and squared cutoffs for atom-type pairs; index 0 is unused.
 void PairABFML::allocate()
 {
     allocated = 1;
-    int np1 = atom->ntypes;
-    memory->create(setflag, np1 + 1, np1 + 1, "pair:setflag");
-    for (int i = 1; i <= np1; i++)
-        for (int j = i; j <= np1; j++) setflag[i][j] = 0;
-    memory->create(cutsq, np1 + 1, np1 + 1, "pair:cutsq");
-
+    const int n = atom->ntypes + 1;
+    memory->create(setflag, n, n, "abfml:setflag");
+    memory->create(cutsq, n, n, "abfml:cutsq");
+    for (int i = 0; i < n; ++i)
+        for (int j = 0; j < n; ++j) {
+            setflag[i][j] = 0;
+            cutsq[i][j] = 0.0;
+        }
 }
 
-static bool is_key(const std::string& input) {
-    std::vector<std::string> keys;
-    keys.push_back("out_freq");
-    keys.push_back("out_file");
-
-    for (int ii = 0; ii < keys.size(); ++ii) {
-        if (input == keys[ii]) {
-            return true;
+// Parse model path and device; load once and reuse the model for later computations.
+void PairABFML::settings(int narg, char **arg)
+{
+    if (narg < 1)
+        error->all(FLERR, "Usage: pair_style abfml MODEL [DEVICE] [mode eager|compile] [precision float32|float64]");
+    model_path = arg[0];
+    device = "cpu";
+    std::string mode = "eager";
+    std::string precision = "float32";
+    int next = 1;
+    // The optional device precedes execution-mode and precision keyword arguments.
+    if (next < narg && std::string(arg[next]) != "mode" && std::string(arg[next]) != "precision")
+        device = arg[next++];
+    bool mode_seen = false, precision_seen = false;
+    while (next < narg) {
+        const std::string key = arg[next++];
+        if (next == narg) error->all(FLERR, "Missing value for ABFML option: {}", key);
+        const std::string value = arg[next++];
+        if (key == "mode" && !mode_seen) {
+            mode_seen = true;
+            mode = value;
+        } else if (key == "precision" && !precision_seen) {
+            precision_seen = true;
+            precision = value;
+        } else {
+            error->all(FLERR, "Unknown or duplicate ABFML option: {}", key);
         }
     }
-    return false;
-}
-
-static int stringCmp(const void* a, const void* b) {
-    char* m = (char*)a;
-    char* n = (char*)b;
-    int i, sum = 0;
-
-    for (i = 0; i < MPI_MAX_PROCESSOR_NAME; i++) {
-        if (m[i] == n[i]) {
-            continue;
-        }
-        else {
-            sum = m[i] - n[i];
-            break;
-        }
-    }
-    return sum;
-}
-
-int PairABFML::get_node_rank() {
-    char host_name[MPI_MAX_PROCESSOR_NAME];
-    memset(host_name, '\0', sizeof(char) * MPI_MAX_PROCESSOR_NAME);
-    char(*host_names)[MPI_MAX_PROCESSOR_NAME];
-    int n, namelen, color, rank, nprocs, myrank;
-    size_t bytes;
-    MPI_Comm nodeComm;
-
-    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-    MPI_Comm_size(MPI_COMM_WORLD, &nprocs);
-    MPI_Get_processor_name(host_name, &namelen);
-
-    bytes = nprocs * sizeof(char[MPI_MAX_PROCESSOR_NAME]);
-    host_names = (char(*)[MPI_MAX_PROCESSOR_NAME])malloc(bytes);
-    for (int ii = 0; ii < nprocs; ii++) {
-        memset(host_names[ii], '\0', sizeof(char) * MPI_MAX_PROCESSOR_NAME);
-    }
-
-    strcpy(host_names[rank], host_name);
-
-    for (n = 0; n < nprocs; n++) {
-        MPI_Bcast(&(host_names[n]), MPI_MAX_PROCESSOR_NAME, MPI_CHAR, n,
-            MPI_COMM_WORLD);
-    }
-    qsort(host_names, nprocs, sizeof(char[MPI_MAX_PROCESSOR_NAME]), stringCmp);
-
-    color = 0;
-    for (n = 0; n < nprocs - 1; n++) {
-        if (strcmp(host_name, host_names[n]) == 0) {
-            break;
-        }
-        if (strcmp(host_names[n], host_names[n + 1])) {
-            color++;
-        }
-    }
-
-    MPI_Comm_split(MPI_COMM_WORLD, color, 0, &nodeComm);
-    MPI_Comm_rank(nodeComm, &myrank);
-
-    MPI_Barrier(MPI_COMM_WORLD);
-    int looprank = myrank;
-    // printf (" Assigning device %d  to process on node %s rank %d,
-    // OK\n",looprank,  host_name, rank );
-    free(host_names);
-    return looprank;
-}
-
-
-
-/* ----------------------------------------------------------------------
-   global settings pair_style
-------------------------------------------------------------------------- */
-
-void PairABFML::settings(int narg, char** arg) {
-    if (narg <= 0) error->all(FLERR, "Illegal pair_style command");
-
-    std::vector<std::string> arg_vector;
-    int iarg = 0;
-    while (iarg < narg && !is_key(arg[iarg])) ++iarg;
-
-    for (int ii = 0; ii < iarg; ++ii) arg_vector.push_back(arg[ii]);
-
-    if (arg_vector.size() == 1) {
-        try {
-            std::string model_file = arg_vector[0];
-            torch::jit::getExecutorMode() = false;
-            model = torch::jit::load(model_file);
-            if (torch::cuda::is_available()) device = torch::Device(torch::kCUDA, get_node_rank());
-            dtype = torch::kFloat64;
-            model.to(dtype);
-            model.to(device);
-            model.eval();
-            if (comm->me == 0) {
-                utils::logmesg(lmp, "Load model successful!----> %s \n", model_file);
-                utils::logmesg(lmp, "INFO IN ABFML-MODEL---->> \n");
-            }
-        } catch (const c10::Error& e) {
-            std::cerr << "Failed to load TorchScript model: " << e.msg() << std::endl;
-        }
+    try {
+        // Reuse an existing host interpreter when LAMMPS runs from Python; never initialize it twice.
+        if (!Py_IsInitialized()) py::initialize_interpreter();
+        py::gil_scoped_acquire gil;
+        auto state = std::make_unique<PythonState>();
+        state->function = py::module_::import("abfml.interfaces.lammps").attr("Bridge")(model_path, device, mode, precision);
+        cutoff = state->function.attr("cutoff").cast<double>();
+        python = std::move(state);
+    } catch (const std::exception &e) {
+        error->all(FLERR, "ABFML Python load failed: {}", e.what());
     }
 }
 
-/* ----------------------------------------------------------------------
-   set coeffs for one or more type pairs pair_coeff
-------------------------------------------------------------------------- */
-
-void PairABFML::coeff(int narg, char** arg) {
+// Map one-based LAMMPS atom types to atomic numbers and validate model support.
+void PairABFML::coeff(int narg, char **arg)
+{
+    if (narg != atom->ntypes + 2 || std::string(arg[0]) != "*" || std::string(arg[1]) != "*")
+        error->all(FLERR, "Usage: pair_coeff * * ELEMENT1 ELEMENT2 ... (element symbols, e.g. Cu)");
+    if (!python) error->all(FLERR, "Set pair_style before pair_coeff");
     if (!allocated) allocate();
-
-    int ilo, ihi, jlo, jhi;
-    utils::bounds(FLERR, arg[0], 1, atom->ntypes, ilo, ihi, error);
-    utils::bounds(FLERR, arg[1], 1, atom->ntypes, jlo, jhi, error);
-
-    int count = 0;
-    for (int i = ilo; i <= ihi; i++)
-        for (int j = std::max(jlo, i); j <= jhi; j++) {
-            setflag[i][j] = 1;
-            count++;
+    try {
+        py::gil_scoped_acquire gil;
+        auto supported = python->function.attr("type_map").cast<std::vector<int64_t>>();
+        type_map.resize(atom->ntypes + 1);
+        for (int i = 1; i <= atom->ntypes; ++i) {
+            type_map[i] = atomic_number(arg[i+1]);
+            if (std::find(supported.begin(), supported.end(), type_map[i]) == supported.end())
+                throw std::runtime_error(std::string("Model does not support element '") + arg[i+1] + "'");
+            for (int j = i; j <= atom->ntypes; ++j) setflag[i][j] = 1;
         }
-
-    cutoff = model.attr("cutoff").toDouble();
-    auto neighbor_attr = model.attr("neighbor");
-    auto type_map_model = model.attr("type_map").toList();
-
-    if (atom->ntypes > narg - 2) error->all(FLERR, "Element mapping not set");
-
-    for (int ii = 2; ii < narg; ++ii) {
-        int chemical = std::stoi(arg[ii]);
-        auto iter = std::find(type_map_model.begin(), type_map_model.end(), chemical);
-        if (iter != type_map_model.end()) {
-            type_map.push_back(chemical);
-        } else {
-            error->all(FLERR, "This element is not included in the machine learning force field");
-        }
+    } catch (const std::exception &e) {
+        error->all(FLERR, "ABFML coefficients failed: {}", e.what());
     }
-
-        if (neighbor_attr.isInt()) {
-        // 如果是整型，所有元素共用一个 max_neighbor 值
-        max_neighbor = neighbor_attr.toInt();
-        std::cout << "Using uniform neighbor count: max_neighbor = " << max_neighbor << std::endl;
-        }
-        else {
-        // 否则按元素类型查找最近邻个数
-        c10::Dict<torch::IValue, torch::IValue> neighbor_dict = neighbor_attr.toGenericDict();
-        std::vector<int> type_map_temp = type_map;
-        std::sort(type_map_temp.begin(), type_map_temp.end());
-        for (int elem : type_map_temp) {
-        if (neighbor_dict.contains(elem)) {
-            int64_t n = neighbor_dict.at(elem).toInt();
-            neighbor_map.push_back(elem);
-            max_neighbor += n;
-            neighbor_width.push_back(max_neighbor);
-        } else {
-            std::cerr << "Error: No neighbor setting for element " << elem << std::endl;
-        }
-    }
-
-    if (count == 0) error->all(FLERR, "Incorrect args for pair coefficients");
 }
 
+// Validate units and reverse-force communication, then request full neighbors for local centers.
+void PairABFML::init_style()
+{
+    if (!python) error->all(FLERR, "ABFML Python model is not initialized");
+    if (std::string(update->unit_style) != "metal")
+        error->all(FLERR, "ABFML Python requires units metal");
+    if (!force->newton_pair)
+        error->all(FLERR, "ABFML Python requires newton on for ghost-force reverse communication");
+    neighbor->add_request(this, NeighConst::REQ_FULL);
 }
-/* ----------------------------------------------------------------------
-   init for one type pair i,j and corresponding j,i
-------------------------------------------------------------------------- */
 
+// Provide pair cutoffs for LAMMPS neighbor construction and communication ranges.
 double PairABFML::init_one(int i, int j)
 {
-    //if (setflag[i][j] == 0) { error->all(FLERR, "All pair coeffs are not set"); 
+    if (!setflag[i][j]) error->all(FLERR, "abfml coefficients are not set");
     return cutoff;
 }
 
-
-void PairABFML::init_style()
+// Convert LAMMPS neighbors to CSR: centers are local, neighbors may include ghosts.
+void PairABFML::build_csr()
 {
-    // Using a nearest neighbor table of type full
-    neighbor->add_request(this, NeighConst::REQ_FULL);
-}
-/* ---------------------------------------------------------------------- */
+    // Local atoms belong to this rank; ghosts copy remote atoms or periodic images.
+    const int nlocal = atom->nlocal;
+    const int nall = nlocal + atom->nghost;
+    double **x = atom->x;
+    int *type = atom->type;
 
+    if (list->inum != nlocal)
+        error->all(FLERR, "ABFML requires a full neighbor list containing every local atom");
 
-void PairABFML::reform_neighbor()
-{
-    double** x = atom->x;
-    int* type = atom->type;
-    int nlocal = atom->nlocal;
-    int n_all = nlocal + atom->nghost;
-    int* ilist = list->ilist;
-    int* numneigh = list->numneigh;
-    int** firstneigh = list->firstneigh;
-    int inum = list->inum;
-    int* jlist;
-    int jnum, itype, jtype;
-    double dx, dy, dz, rsq, rij;
+    atomic_numbers.resize(nall);
+    for (int i = 0; i < nall; ++i) atomic_numbers[i] = type_map[type[i]];
 
-    image_type.clear();
-    image_type.resize(nlocal, 0);
-    neighbor_type.clear();
-    neighbor_type.resize(nlocal * max_neighbor, -1);
-    neighbor_list.clear();
-    neighbor_list.resize(nlocal * max_neighbor, -1);
-    image_dR.clear();
-    image_dR.resize(nlocal * max_neighbor * 4, 0.0);
+    center_indices.resize(nlocal);
+    edge_ptr.assign(nlocal + 1, 0);
+    neighbor_indices.clear();
+    edge_vectors.clear();
 
+    const double cutoff2 = cutoff * cutoff;
+    for (int slot = 0; slot < list->inum; ++slot) {
+        const int i = list->ilist[slot];
+        center_indices[slot] = i;
+        const int jnum = list->numneigh[i];
+        const int *jlist = list->firstneigh[i];
 
-    std::vector<int> use_type(n_all);
+        for (int jj = 0; jj < jnum; ++jj) {
+            // Clear special_bonds flags stored in the high bits of neighbor indices.
+            const int j = jlist[jj] & NEIGHMASK;
+            // Ghost positions already include periodic shifts; subtraction directly gives Rj - Ri.
+            const double dx = x[j][0] - x[i][0];
+            const double dy = x[j][1] - x[i][1];
+            const double dz = x[j][2] - x[i][2];
+            const double rsq = dx * dx + dy * dy + dz * dz;
+            if (j == i || rsq >= cutoff2) continue;
 
-    for (int ii = 0; ii < n_all; ii++)
-    {
-        use_type[ii] = type_map[type[ii] - 1];
-    }
-
-    double rc2 = cutoff * cutoff;
-
-    if (neighbor_map.size() == 0)
-    {
-        for (int ii = 0; ii < inum; ii++)
-        {
-            int i = ilist[ii];
-            jlist = firstneigh[i];
-            image_type[ii] = use_type[i];
-            int kk = 0;
-            for (int jj = 0; jj < numneigh[i]; jj++)
-            {
-                int j = jlist[jj];
-                dx = x[j][0] - x[i][0];
-                dy = x[j][1] - x[i][1];
-                dz = x[j][2] - x[i][2];
-                rsq = dx * dx + dy * dy + dz * dz;
-                if (rsq <= rc2) {
-                    rij = sqrt(rsq);
-                    int indices = ii * max_neighbor * 4 + kk * 4;
-                    image_dR[indices] = rij;
-                    image_dR[indices + 1] = dx;
-                    image_dR[indices + 2] = dy;
-                    image_dR[indices + 3] = dz;
-                    neighbor_list[ii * max_neighbor + kk] = j;
-                    neighbor_type[ii * max_neighbor + kk] = use_type[j];
-                    kk = kk + 1;
-                }
-            }
-            if (kk > max_neighbor)
-                {
-                    std::vector<std::tuple<double, double, double, double, int, int>> data;
-                    data.resize(kk);
-                    int indices = ii * max_neighbor * 4;
-                    for (int mm = 0; mm <= kk; mm++) {
-                        data[mm] = std::make_tuple(image_dR[mm * 4],
-                            image_dR[mm * 4 + 1],
-                            image_dR[mm * 4 + 2],
-                            image_dR[mm * 4 + 3],
-                            neighbor_list[ii * max_neighbor + mm],
-                            neighbor_type[ii * max_neighbor + mm]);
-                    }
-                    std::sort(data.begin(), data.end(), [](const auto& lhs, const auto& rhs) {
-                        return std::get<0>(lhs) > std::get<0>(rhs);
-                        });
-                    for (int mm = 0; mm < max_neighbor; mm++)
-                    {
-                        image_dR[indices] = std::get<0>(data[mm]);
-                        image_dR[indices + 1] = std::get<1>(data[mm]);
-                        image_dR[indices + 2] = std::get<2>(data[mm]);
-                        image_dR[indices + 3] = std::get<3>(data[mm]);
-                        neighbor_list[ii * max_neighbor + mm] = std::get<4>(data[mm]);
-                        neighbor_type[ii * max_neighbor + mm] = std::get<5>(data[mm]);
-                    }
-                }
+            neighbor_indices.push_back(j);
+            edge_vectors.push_back(dx);
+            edge_vectors.push_back(dy);
+            edge_vectors.push_back(dz);
         }
-    }
-    else
-    {
-        for (int ii = 0; ii < inum; ii++)
-        {
-            int i = ilist[ii];
-            jlist = firstneigh[i];
-            image_type[ii] = use_type[i];
-            std::vector<int> kk(type_map.size(), 0);
-            for (int jj = 0; jj < numneigh[i]; jj++)
-            {
-                int j = jlist[jj];
-                dx = x[j][0] - x[i][0];
-                dy = x[j][1] - x[i][1];
-                dz = x[j][2] - x[i][2];
-                rsq = dx * dx + dy * dy + dz * dz;
-                if (rsq <= rc2) {
-                    rij = sqrt(rsq);
-                    jtype = type[j];
-                    int indices_1 = (ii * max_neighbor + neighbor_width[jtype - 1] + kk[jtype - 1]) * 4;
-                    int indices_2 = ii * max_neighbor + neighbor_width[jtype - 1] + kk[jtype - 1];
-                    image_dR[indices_1] = rij;
-                    image_dR[indices_1 + 1] = dx;
-                    image_dR[indices_1 + 2] = dy;
-                    image_dR[indices_1 + 3] = dz;
-                    neighbor_list[indices_2] = j;
-                    neighbor_type[indices_2] = use_type[j];
-                    kk[jtype-1] = kk[jtype-1] + 1;   
-                }
-            }
-
-        }
+        // Edges for this center slot occupy [edge_ptr[slot], edge_ptr[slot + 1]).
+        edge_ptr[slot + 1] = static_cast<int64_t>(neighbor_indices.size());
     }
 }
 
-
+// Per-step force entry point: prepare inputs, invoke Python, and accumulate LAMMPS results.
 void PairABFML::compute(int eflag, int vflag)
 {
+    // Initialize energy, atomic-energy, and virial accumulators for this LAMMPS request.
+    ev_init(eflag, vflag);
+    if (vflag_atom)
+        error->all(FLERR, "Use centroid/stress/atom for the nine-component center-assigned virial");
+    if (atom->nlocal == 0) return;
+    build_csr();
+    try {
+        py::gil_scoped_acquire gil;
+        // Use independently owned NumPy arrays so Python cannot access overwritten C++ buffers next step.
+        auto array = [](const std::vector<int64_t> &v) {
+            py::array_t<int64_t> result(v.size());
+            std::copy(v.begin(), v.end(), result.mutable_data());
+            return result;
+        };
+        py::array_t<double> vectors({static_cast<py::ssize_t>(neighbor_indices.size()), py::ssize_t(3)});
+        std::copy(edge_vectors.begin(), edge_vectors.end(), vectors.mutable_data());
+        // Receive properties by name and require them only when requested by LAMMPS.
+        auto result = python->function.attr("compute")(array(atomic_numbers), array(center_indices),
+                array(edge_ptr), array(neighbor_indices), vectors, static_cast<bool>(cvflag_atom)).cast<py::dict>();
+        auto required = [&result](const char *name) {
+            if (!result.contains(name))
+                throw std::runtime_error(std::string("Model does not provide ") + name);
+            auto value = py::array_t<double, py::array::c_style>::ensure(result[name]);
+            if (!value) throw std::runtime_error(std::string("Invalid output array: ") + name);
+            for (py::ssize_t i = 0; i < value.size(); ++i)
+                if (!std::isfinite(value.data()[i]))
+                    throw std::runtime_error(std::string("Non-finite output: ") + name);
+            return value;
+        };
+        const int nall = atom->nlocal + atom->nghost;
+        auto forces = required("forces");
+        if (forces.ndim() != 2 || forces.shape(0) != nall || forces.shape(1) != 3)
+            throw std::runtime_error("forces must have shape [nlocal + nghost, 3]");
 
-    auto t1 = std::chrono::high_resolution_clock::now();
-    if (eflag || vflag) ev_setup(eflag, vflag);
-    double** f = atom->f;
-    int newton_pair = force->newton_pair;
-    int nlocal = atom->nlocal;
-    int nghost = atom->nghost;
-    int n_all = nlocal + nghost;
-
-    torch::Tensor element_tensor = torch::zeros({ type_map.size() }, torch::kInt);
-    for (int i = 0; i < type_map.size(); i++)
-    {
-        element_tensor[i] = type_map[i];
-    }
-    reform_neighbor();
-    if (nlocal > 0)
-    {
-        // set TensorOptions
-        const auto opts_int = torch::TensorOptions().dtype(torch::kInt);
-        const auto opts_float = torch::TensorOptions().dtype(torch::kFloat64);
-        torch::Tensor image_type_tensor = torch::from_blob(image_type.data(), { 1,nlocal }, opts_int).to(device);
-        torch::Tensor neighbor_list_tensor = torch::from_blob(neighbor_list.data(), { 1,nlocal, max_neighbor }, opts_int).to(device);
-        torch::Tensor neighbor_type_tensor = torch::from_blob(neighbor_type.data(), { 1,nlocal, max_neighbor }, opts_int).to(device);
-        torch::Tensor image_dR_tensor = torch::from_blob(image_dR.data(), { 1, nlocal, max_neighbor, 4 }, opts_float).to(device, dtype);
-
-        auto output = model.forward({ element_tensor, image_type_tensor, neighbor_list_tensor, neighbor_type_tensor, image_dR_tensor, nghost}).toTuple();
-
-        torch::Tensor Etot = output->elements()[0].toTensor().to(torch::kCPU, torch::kFloat64);
-        torch::Tensor Ei = output->elements()[1].toTensor().to(torch::kCPU, torch::kFloat64);
-        torch::Tensor Force = output->elements()[2].toTensor().to(torch::kCPU, torch::kFloat64);
-        torch::Tensor virial_model = output->elements()[3].toTensor().to(torch::kCPU, torch::kFloat64);
-        torch::Tensor virial_atoms = output->elements()[4].toTensor().to(torch::kCPU, torch::kFloat64);
-        // get force
-        auto force_ptr = Force.accessor<double, 3>();
-        auto Ei_ptr = Ei.accessor <double, 3>();
-        auto virial_ptr = virial_model.accessor<double, 2>();
-        auto virial_atoms_ptr = virial_atoms.accessor<double, 3>();
-
-
-        for (int i = 0; i < n_all; i++)
-        {
-            f[i][0] += force_ptr[0][i][0];
-            f[i][1] += force_ptr[0][i][1];
-            f[i][2] += force_ptr[0][i][2];
+        // Validate every requested output before changing accumulators; missing values must not become zeros.
+        double energy = 0.0;
+        py::array_t<double, py::array::c_style> ae, w, atomic_w;
+        if (eflag_global) {
+            auto e = required("energy");
+            if (e.size() != 1)
+                throw std::runtime_error("energy must contain one local total energy");
+            energy = *e.data();
         }
-
-        // get energy
-        if (eflag)  eng_vdwl = Etot[0][0].item<double>();
-
-        if (eflag_atom)
-        {
-            for (int ii = 0; ii < nlocal; ii++)
-            {
-                eatom[ii] = Ei_ptr[0][ii][0];
-            }
+        if (eflag_atom) {
+            ae = required("atomic_energies");
+            if (ae.ndim() != 1 || ae.shape(0) != atom->nlocal)
+                throw std::runtime_error("atomic_energies must have shape [nlocal]");
         }
-        if (vflag_atom) {
-            error->all(FLERR,
-                "6-element atomic virial is not supported. Use compute "
-                "centroid/stress/atom command for 9-element atomic virial.");
+        if (vflag_global) {
+            w = required("virial");
+            if (w.ndim() != 2 || w.shape(0) != 3 || w.shape(1) != 3)
+                throw std::runtime_error("virial must have shape [3, 3]");
         }
         if (cvflag_atom) {
-            for (int ii = 0; ii < n_all; ++ii) {
-                cvatom[ii][0] += virial_atoms_ptr[0][ii][0];  // xx
-                cvatom[ii][1] += virial_atoms_ptr[0][ii][4];  // yy
-                cvatom[ii][2] += virial_atoms_ptr[0][ii][8];  // zz
-                cvatom[ii][3] += virial_atoms_ptr[0][ii][3];  // xy
-                cvatom[ii][4] += virial_atoms_ptr[0][ii][6];  // xz
-                cvatom[ii][5] += virial_atoms_ptr[0][ii][7];  // yz
-                cvatom[ii][6] += virial_atoms_ptr[0][ii][1];  // yx
-                cvatom[ii][7] += virial_atoms_ptr[0][ii][2];  // zx
-                cvatom[ii][8] += virial_atoms_ptr[0][ii][5];  // zy
+            atomic_w = required("atomic_virial");
+            if (atomic_w.ndim() != 3 || atomic_w.shape(0) != atom->nlocal ||
+                    atomic_w.shape(1) != 3 || atomic_w.shape(2) != 3)
+                throw std::runtime_error("atomic_virial must have shape [nlocal, 3, 3]");
+        }
+        auto f = forces.unchecked<2>();
+        for (int i = 0; i < nall; ++i)
+            for (int d = 0; d < 3; ++d) atom->f[i][d] += f(i, d);
+        // LAMMPS reverse-communicates ghost forces with newton on; do not communicate them twice.
+        if (eflag_global) eng_vdwl += energy;
+        if (eflag_atom) {
+            auto e = ae.unchecked<1>();
+            for (int slot = 0; slot < atom->nlocal; ++slot)
+                eatom[center_indices[slot]] += e(slot);
+        }
+        // Center assignment: preserve all nine components without symmetry or transposition; add local centers only.
+        // Component order: xx yy zz xy xz yz yx zx zy.
+        if (cvflag_atom) {
+            auto a = atomic_w.unchecked<3>();
+            for (int slot = 0; slot < atom->nlocal; ++slot) {
+                int i = center_indices[slot];
+                cvatom[i][0] += a(slot, 0, 0);
+                cvatom[i][1] += a(slot, 1, 1);
+                cvatom[i][2] += a(slot, 2, 2);
+                cvatom[i][3] += a(slot, 0, 1);
+                cvatom[i][4] += a(slot, 0, 2);
+                cvatom[i][5] += a(slot, 1, 2);
+                cvatom[i][6] += a(slot, 1, 0);
+                cvatom[i][7] += a(slot, 2, 0);
+                cvatom[i][8] += a(slot, 2, 1);
             }
         }
-        if (vflag) {
-            virial[0] = virial_ptr[0][0];    // xx
-            virial[1] = virial_ptr[0][4];    // yy
-            virial[2] = virial_ptr[0][8];    // zz
-            virial[3] = virial_ptr[0][1];    // xy
-            virial[4] = virial_ptr[0][2];    // xz
-            virial[5] = virial_ptr[0][5];    // yz
+        // Virial is not divided by volume; six-component order: xx yy zz xy xz yz.
+        if (vflag_global) {
+            auto v = w.unchecked<2>();
+            virial[0] += v(0, 0); virial[1] += v(1, 1); virial[2] += v(2, 2);
+            // Global six-component virial uses the symmetric tensor part; atomic nine-component tensors remain unchanged.
+            virial[3] += 0.5 * (v(0, 1) + v(1, 0));
+            virial[4] += 0.5 * (v(0, 2) + v(2, 0));
+            virial[5] += 0.5 * (v(1, 2) + v(2, 1));
         }
+    } catch (const std::exception &e) {
+        error->all(FLERR, "ABFML Python compute failed: {}", e.what());
     }
-    
-
 }
+

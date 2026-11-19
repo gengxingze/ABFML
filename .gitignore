@@ -1,0 +1,14 @@
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+.idea/
+runs/
+tmp/
+site/
+.cache/
+.venv-docs/
+.venv/
+venv/
+examples/**/results/
