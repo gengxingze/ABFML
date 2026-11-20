@@ -276,7 +276,8 @@ def _train(config_path, *, resume, fine_tune, epochs, timing):
         grouped[name] = {} if draw_parity else None
         reports[name] = evaluate_dataset(summary_model, subset, pairs=grouped[name],
                                         batch_size=config.data.loader.batch_size, device=device,
-                                        dtype=actual_dtype, provider=provider)
+                                        dtype=actual_dtype, provider=provider,
+                                        labels=loss_config["label"])
     _mark_stage(timing, "Result output")
     if draw_parity:
         from abfml.tools import plot_predictions

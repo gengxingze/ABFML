@@ -23,12 +23,15 @@ logger = get_logger("abfml.training")
 def _error_statistics(
     output: ModelOutput,
     batch: tuple[ModelInput, dict[str, torch.Tensor]],
+    selected=None,
 ) -> dict[str, tuple[float, int]]:
     """Return squared-error sums and scalar counts for matching predictions and labels."""
     statistics: dict[str, tuple[float, int]] = {}
     inputs, labels = batch
     predictions = collect_outputs(output)
     for name in labels:
+        if selected is not None and name not in selected:
+            continue
         prediction = predictions.get(name)
         label = labels.get(name)
         if prediction is None or label is None:
@@ -151,7 +154,7 @@ def train_loop(
         optimizer.zero_grad()
         output = model(batch[0])
         loss, components = loss_fn(output, batch)
-        error_statistics = _error_statistics(output, batch)
+        error_statistics = _error_statistics(output, batch, selected=components)
         if not bool(torch.isfinite(loss)):
             raise ValueError("Training loss is not finite")
         loss.backward()
@@ -223,7 +226,7 @@ def valid_loop(
                       for name, value in raw_batch[1].items()})
             output = model(batch[0])
             loss, components = loss_fn(output, batch)
-            error_statistics = _error_statistics(output, batch)
+            error_statistics = _error_statistics(output, batch, selected=components)
             running.update(
                 loss,
                 components,
