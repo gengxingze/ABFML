@@ -104,7 +104,7 @@ pair_coeff * * ELEMENT1 ELEMENT2 ...
 | 参数 | 含义 | 默认值 |
 | --- | --- | --- |
 | `MODEL` | 模型或检查点路径 | 必填 |
-| `DEVICE` | PyTorch 设备，如 `cpu`、`cuda:0` | `cpu` |
+| `DEVICE` | PyTorch 设备：`cpu`、自动分配的 `cuda`、显式指定的 `cuda:N` | `cpu` |
 | `mode` | 普通执行或 `torch.compile` | `eager` |
 | `precision` | 模型参数、浮点 buffer 和输入的计算精度 | `float32` |
 
@@ -181,6 +181,14 @@ dump dv all custom 1 atomic_virial.dump id type c_av[1] c_av[2] c_av[3] c_av[4] 
 模型原始 virial 单位为 eV，不除体积。上述 `compute` 按 LAMMPS 应力约定带负号，并进行 `metal` 单位换算，输出属于压力乘体积量，不能直接当作模型原始的 eV 数组。比较时需统一符号、体积及单位；`thermo` 压力还可能包含动能项。
 
 ## 8. 常见问题
+
+### MPI 多 GPU 设备分配
+
+使用 `pair_style abfml model.pt cuda` 时，插件通过 `MPI_Comm_split_type` 获取 LAMMPS communicator 内的节点本地 rank，并在每个节点上选择相应的可见 GPU。例如，节点内 rank 0/1 分别使用可见设备 `cuda:0`/`cuda:1`。仅有一张可见 GPU 时使用 `cuda:0`，适配调度器已经为各进程隔离设备的情况；若多个进程共享这唯一可见设备，则仍会共享该卡，应由提交脚本确保正确的资源分配。
+
+可见 GPU 多于一张但不足以覆盖节点本地 rank 时，插件会报错，不自动取模共享 GPU。显式的 `cuda:N` 保持原义，不自动映射。每个 MPI 进程加载一份模型。
+
+该分配方式可配合 Intel MPI 的 `mpirun` 使用，不依赖 `srun + PMI2`；作业仍需先向调度器申请 GPU。修改 C++ 后需要重新编译插件。当前修复已在集群编译通过，实际多 GPU 运行尚待验证。
 
 | 问题 | 处理方式 |
 | --- | --- |

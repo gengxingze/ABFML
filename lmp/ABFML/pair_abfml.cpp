@@ -121,10 +121,28 @@ void PairABFML::settings(int narg, char **arg)
             error->all(FLERR, "Unknown or duplicate ABFML option: {}", key);
         }
     }
+    // Bare "cuda" selects a GPU by node-local rank; explicit cuda:N stays unchanged.
+    int local_rank = 0;
+    if (device == "cuda") {
+        MPI_Comm node_comm;
+        MPI_Comm_split_type(world, MPI_COMM_TYPE_SHARED, comm->me, MPI_INFO_NULL, &node_comm);
+        MPI_Comm_rank(node_comm, &local_rank);
+        MPI_Comm_free(&node_comm);
+    }
     try {
         // Reuse an existing host interpreter when LAMMPS runs from Python; never initialize it twice.
         if (!Py_IsInitialized()) py::initialize_interpreter();
         py::gil_scoped_acquire gil;
+        if (device == "cuda") {
+            auto cuda = py::module_::import("torch").attr("cuda");
+            const int count = cuda.attr("device_count")().cast<int>();
+            if (count == 0) throw std::runtime_error("No CUDA devices visible to this MPI rank");
+            const int selected = count == 1 ? 0 : local_rank;
+            if (selected >= count)
+                throw std::runtime_error("More node-local MPI ranks than visible GPUs");
+            device = "cuda:" + std::to_string(selected);
+            cuda.attr("set_device")(selected);
+        }
         auto state = std::make_unique<PythonState>();
         state->function = py::module_::import("abfml.interfaces.lammps").attr("Bridge")(model_path, device, mode, precision);
         cutoff = state->function.attr("cutoff").cast<double>();
