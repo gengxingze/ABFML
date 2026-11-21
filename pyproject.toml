@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "abfml"
-version = "2026.11.20"
+version = "2026.11.21"
 description = "A PyTorch framework for problem-oriented development, evaluation, and application of machine-learning force fields."
 readme = { file = "README.md", content-type = "text/markdown" }
 requires-python = ">=3.11"
